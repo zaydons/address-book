@@ -15,10 +15,19 @@
 				// Attempt to create a new PDO connection
 				try {
 					// Set $instance to a new PDO, as currently not set
-					self::$instance = new PDO(DB_TYPE.":host=".DB_SERVER.";dbname=".DB_NAME, DB_USER, DB_PASS);
+					// Database errors throw exceptions rather than failing silently
+					self::$instance = new PDO(DB_TYPE.":host=".DB_SERVER.";dbname=".DB_NAME, DB_USER, DB_PASS, array(
+						PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+					));
 				} catch(PDOException $error) {
-					// If an error has been found
-					echo $error->getMessage();
+					// Record the details in the server error log, rather than displaying them, as they may include the database host or username
+					error_log('Address Book: unable to connect to the database: ' . $error->getMessage());
+					// Show a generic message and go no further, as the system can't function without a database
+					if(!headers_sent()) {
+						http_response_code(500);
+					}
+					echo 'Unable to connect to the database. Please contact a system administrator.';
+					exit;
 				}
 			}
 			// Return the Singleton $instance

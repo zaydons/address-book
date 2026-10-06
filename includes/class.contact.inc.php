@@ -291,22 +291,8 @@
 		
 		// Generate an ID to be used as the unique key associated with a new contact which is being created
 		private function generate_id($token_length) {
-			// Used to generate a token
-			// Initialise a variable used to store the token
-			$token = null;
-			// Create a salt of accepted characters
-			$salt = "abcdefghjkmnpqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ0123456789";
-			
-			srand((double)microtime()*1000000);
-			$i = 0;
-			while ($i < $token_length) {
-				$num = rand() % strlen($salt);
-				$tmp = substr($salt, $num, 1);
-				$token = $token . $tmp;
-				$i++;
-			}
-			// Return the token
-			return $token;
+			// Use a cryptographically secure generator so that the value can't be predicted
+			return Random::string($token_length);
 		}
 		
 		public function format_phone_number($phone_number) {

@@ -9,14 +9,14 @@
 
 	/**
 	 * The username of the account which has access to the database on the MySQL/MariaDB server.
+	 * If you are using Docker then this is 'address_book', the user created by docker-compose.yml.
+	 * Avoid using 'root' - the user only needs SELECT, INSERT, UPDATE and DELETE on the address_book database.
 	 */
-	defined('DB_USER')			?	null	:	define('DB_USER', 'root');
+	defined('DB_USER')			?	null	:	define('DB_USER', 'address_book');
 
 	/**
 	 * The password (if any) associated with the DB_USER account.
-	 * If you are using Docker then a password will likely be set during setup. 
-	 * You should consult the logs for the 'mysql' container which will list the password generated.
-	 * mysql-1    | 2025-03-27 08:52:31+00:00 [Note] [Entrypoint]: GENERATED ROOT PASSWORD: iNBqruolQSo6ZEsc8ZXyQ5QpUWke9KF5
+	 * If you are using Docker then this is the DB_PASS value which you set in the .env file.
 	 */
 	defined('DB_PASS')			?	null	:	define('DB_PASS', '');
 

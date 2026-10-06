@@ -4,3 +4,14 @@
 	.pt-50 {
 		padding-top: 50px;
 	}
+	/* Make the log out button in the navigation bar look like the other navigation links */
+	.navbar-logout {
+		padding: 15px;
+		color: #777;
+		text-decoration: none;
+	}
+	.navbar-logout:hover,
+	.navbar-logout:focus {
+		color: #333;
+		text-decoration: none;
+	}

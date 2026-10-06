@@ -18,13 +18,19 @@ cp includes/EXAMPLE.settings.local.inc.php includes/settings.local.inc.php
 
 Docker is the recommended method to set up this system due to it's ease of getting things configured quickly and also it is far less likely to be a victim of issues which may occur due to OS or versions of software. The below assumes that you have `docker` and `docker compose` installed on your system.
 
-1. First you should build the environment. This will download any images and set up the custom images which are required to run in the next step.
+1. Choose a password for the system's database user. Copy [.env.example](.env.example) to `.env` and set `DB_PASS` in it to a strong password. The `.env` file is ignored by Git.
+
+```bash
+cp .env.example .env
+```
+
+2. Build the environment. This will download any images and set up the custom images which are required to run in the next step.
 
 ```bash
 docker compose build
 ```
 
-2. Once the `build` has completed successfully you can then start the environment with the `up` command.
+3. Once the `build` has completed successfully you can then start the environment with the `up` command.
 
 ```bash
 docker compose up
@@ -32,19 +38,13 @@ docker compose up
 
 This may do some additional downloading which wasn't done during the `build` stage. This is normal.
 
-3. The first time you run the `up` command the database will be initialised and the `root` user will have a randomly generated password set. You should check through the console logs where there will be a message which indicates what the password has been set to.
+The first time you run the `up` command the database will be initialised. An `address_book` database user is created with the password from your `.env` file, with access only to read and change data in the `address_book` database. The `root` user is given a random password which is shown in the console logs; the system doesn't need it.
 
-```console
-mysql-1    | 2025-03-27 08:52:31+00:00 [Note] [Entrypoint]: GENERATED ROOT PASSWORD: iNBqruolQSo6ZEsc8ZXyQ5QpUWke9KF5
-```
-
-You should take this randomly generated password and populate it in the `DB_PASS` of your `settings.local.inc.php`.
-
-4. The remaining values in your `settings.local.inc.php` should then also be set to meet the Docker environment which you are using:
+4. Set the values in your `settings.local.inc.php` to match the Docker environment:
 
 - `DB_SERVER` should be set to `mysql`.
-- `DB_USER` should be set to `root`.
-- `DB_PASS` should be set the password as detailed above.
+- `DB_USER` should be set to `address_book`.
+- `DB_PASS` should be set to the same password as `DB_PASS` in your `.env` file.
 - `DB_NAME` should be set to `address_book`.
 - `SITE_URL` should be set to the address from which the system will be accessible from. Typically http://localhost/ is acceptable.
 
@@ -60,7 +60,12 @@ If you wish to set up the system manually then this too can be done.
 
 #### Database Configuration
 
-You should create a database called `address_book` along with a user which has permissions to this newly created database.
+You should create a database called `address_book` along with a user which has permissions to this newly created database. The user only needs `SELECT`, `INSERT`, `UPDATE` and `DELETE`, so there's no need to use `root`. For example:
+
+```sql
+CREATE USER 'address_book'@'localhost' IDENTIFIED BY 'a-strong-password';
+GRANT SELECT, INSERT, UPDATE, DELETE ON `address_book`.* TO 'address_book'@'localhost';
+```
 
 You should then import the [sql/sql.sql](sql/sql.sql) file into your database to set the system up to a baseline. For example:
 
@@ -91,11 +96,60 @@ If the system is working correctly then you should be prompted with a login wind
 - Username: `admin`
 - Password: `LetMeIn123`
 
+You will be asked to choose a new password the first time you log in. Users added by another user, or whose password is reset by another user, are also asked to choose a new password when they next log in.
+
+## Upgrading
+
+### To 1.1.0
+
+Version 1.1.0 changes the database structure. Existing installations must run the [sql/upgrades/1.1.0.sql](sql/upgrades/1.1.0.sql) file against their database before using the new version, for example:
+
+```bash
+mysql -u root -p address_book < sql/upgrades/1.1.0.sql
+```
+
+This also asks the default `admin` account to choose a new password if it still has the default password.
+
+If you use Docker, `docker compose` now needs a `.env` file (see [Docker installation](#1-docker-recommended)). The `address_book` database user is only created automatically for a new database. For an existing database, create it yourself as the `root` user, using the same password as in `.env`:
+
+```sql
+CREATE USER 'address_book'@'%' IDENTIFIED BY 'your-db-pass';
+GRANT SELECT, INSERT, UPDATE, DELETE ON `address_book`.* TO 'address_book'@'%';
+```
+
+Then change `DB_USER` and `DB_PASS` in your `settings.local.inc.php`.
+
 ## Local Settings Configuration Values
 
 There are several configuration values which can be set in the `includes/settings.local.inc.php` file. Below lists settings with their appropriate values:
 
 - `TIMEZONE` should be set to the timezone you require for the system. See the [PHP Manual](https://www.php.net/manual/en/timezones.php) for options. 
+- `LOGIN_MAX_FAILED_USERNAME` (optional, default `5`) is the number of failed logins allowed for one username within the lockout window. Further attempts for that username are blocked until the window has passed.
+- `LOGIN_MAX_FAILED_IP` (optional, default `20`) is the number of failed logins allowed from one IP address within the lockout window.
+- `LOGIN_LOCKOUT_MINUTES` (optional, default `15`) is the length of the lockout window in minutes.
+
+## Running Behind a Reverse Proxy
+
+The system uses the client's IP address (`REMOTE_ADDR`) to check that a logged in session hasn't moved to another device, to limit failed logins, to check API tokens which are restricted to an IP address, and in the logs. If the system is behind a reverse proxy or load balancer, `REMOTE_ADDR` will be the proxy's address unless the web server is configured to replace it with the real client address. Without that:
+
+- All users will appear to come from the same IP address, so failed logins from anyone count towards the same IP address limit.
+- API tokens restricted to an IP address will only work if restricted to the proxy's address.
+
+Configure your web server to take the client address from the proxy, but only trust the header from your proxy's address. For example, with Nginx's [realip module](https://nginx.org/en/docs/http/ngx_http_realip_module.html):
+
+```nginx
+set_real_ip_from 10.0.0.0/8;  # your proxy's address
+real_ip_header X-Forwarded-For;
+```
+
+or with Apache's [mod_remoteip](https://httpd.apache.org/docs/current/mod/mod_remoteip.html):
+
+```apache
+RemoteIPHeader X-Forwarded-For
+RemoteIPInternalProxy 10.0.0.0/8
+```
+
+If the proxy handles HTTPS, set `SITE_URL` to the `https://` address so that the session cookie is only sent over HTTPS.
 
 ## Screenshots
 
@@ -103,13 +157,18 @@ Screenshots of the system can be found in the [screenshots](screenshots/) direct
 
 ## API
 
-The API built in the system is accessed using a HTTP GET request to the [api.php](html/api.php) page. The request requires 3 values:
+The API built in the system is accessed using a HTTP GET request to the [api.php](html/api.php) page. The API token is sent in an `Authorization` header, and the request requires 2 values:
 
-- `t` for the API token.
 - `m` for the API method.
 - `q` for the API query string - note that the query must contain no whitespace (including encoded whitespace characters).
 
-For example, `http://localhost/api.php?t=APITOKEN&m=APIMETHOD&q=APIQUERY`.
+For example:
+
+```bash
+curl -H "Authorization: Bearer APITOKEN" "http://localhost/api.php?m=APIMETHOD&q=APIQUERY"
+```
+
+For older integrations the token can still be sent as a `t` value instead, such as `http://localhost/api.php?t=APITOKEN&m=APIMETHOD&q=APIQUERY`. This isn't recommended, as web servers and proxies record URLs in their logs. The system's own logs only record the first 4 characters of a token.
 
 API tokens are created on the same [api.php](html/api.php) page.
 
@@ -170,7 +229,7 @@ If an API token has no authorised IP address associated with it, then this means
 API methods are used in the `m` value in the HTTP GET request. The following methods are valid.
 
 - `findNumber` - Obtain the first contact found based on a queried phone number (mobile and home). Note that if more than one contact exists with the same phone number then this will only return the first result, based on the last name of the contacts in alphabetical order.
-  - Example: a query of `api.php?t=APITOKEN&m=findNumber&q=0987654321` will return the result (if it exists) for the phone number `0987654321`.
+  - Example: a query of `api.php?m=findNumber&q=0987654321` (with the token in the `Authorization` header) will return the result (if it exists) for the phone number `0987654321`.
 
 ## License
 

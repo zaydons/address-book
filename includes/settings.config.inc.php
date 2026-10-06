@@ -39,6 +39,15 @@
 	// Set the database driver to MySQL
 	define("DB_TYPE", "mysql");
 
+	// Limits on failed logins, to slow down attempts to guess passwords
+	// These can be overridden in settings.local.inc.php
+	// Number of failed logins allowed for a single username within the window before further attempts are blocked
+	defined("LOGIN_MAX_FAILED_USERNAME")			?	null	:	define("LOGIN_MAX_FAILED_USERNAME", 5);
+	// Number of failed logins allowed from a single IP address within the window before further attempts are blocked
+	defined("LOGIN_MAX_FAILED_IP")					?	null	:	define("LOGIN_MAX_FAILED_IP", 20);
+	// Length of the window, in minutes
+	defined("LOGIN_LOCKOUT_MINUTES")				?	null	:	define("LOGIN_LOCKOUT_MINUTES", 15);
+
 	// Set page names
 	defined("PAGENAME_INDEX")						?	null	:	define("PAGENAME_INDEX", "Address Book");
 	defined("PAGENAME_LOGIN")						?	null	:	define("PAGENAME_LOGIN", "Log In");
@@ -57,6 +66,7 @@
 	defined("PAGENAME_APIADD")						?	null	:	define("PAGENAME_APIADD", "Add API Token");
 	defined("PAGENAME_APIDELETE")					?	null	:	define("PAGENAME_APIDELETE", "Delete API Token");
 	defined("PAGENAME_APIUPDATE")					?	null	:	define("PAGENAME_APIUPDATE", "Update API Token");
+	defined("PAGENAME_CHANGEPASSWORD")				?	null	:	define("PAGENAME_CHANGEPASSWORD", "Change Password");
 	
 	// Set page links
 	defined("PAGELINK_INDEX")						?	null	:	define("PAGELINK_INDEX", "index.php");
@@ -74,6 +84,7 @@
 	defined("PAGELINK_APIADD")						?	null	:	define("PAGELINK_APIADD", "add-api.php");
 	defined("PAGELINK_APIDELETE")					?	null	:	define("PAGELINK_APIDELETE", "delete-api.php");
 	defined("PAGELINK_APIUPDATE")					?	null	:	define("PAGELINK_APIUPDATE", "update-api.php");
+	defined("PAGELINK_CHANGEPASSWORD")				?	null	:	define("PAGELINK_CHANGEPASSWORD", "change-password.php");
 	
 	// Server time zone
  	date_default_timezone_set(TIMEZONE);
@@ -84,11 +95,26 @@
 		include('class.' . $class_name . '.inc.php');
 	});
 	
-	// Begin running the Session as items in constructor are required for the system to function correctly
-	$session = new Session();
+	// Handle any unexpected errors, such as a database failure, without revealing details to the user
+	set_exception_handler(function($exception) {
+		// Record the full details in the server error log for the administrator
+		error_log('Address Book: ' . $exception);
+		// Show a generic message to the user
+		if(!headers_sent()) {
+			http_response_code(500);
+		}
+		echo 'An unexpected error occurred. Please try again later, and if the problem continues contact a system administrator.';
+		exit;
+	});
 	
-	// Begin a new User instance as will automatically check details of the user if they are logged in etc
-	$user = new User();
+	// Security headers sent with every page
+	// Stop the system being loaded inside a frame on another site (clickjacking)
+	header("X-Frame-Options: DENY");
+	header("Content-Security-Policy: frame-ancestors 'none'");
+	// Stop browsers guessing a different content type to the one sent
+	header("X-Content-Type-Options: nosniff");
+	// Only send the full URL as a referrer to this site
+	header("Referrer-Policy: same-origin");
 	
 	// Site functions
 	require_once("functions.inc.php");
@@ -98,5 +124,19 @@
 	
 	// Validation messages for form fields, such as string lengths too long, or required fields missing
 	require_once("alerts.validation.inc.php");
+	
+	// Begin running the Session as items in constructor are required for the system to function correctly
+	$session = new Session();
+	
+	// Begin a new User instance as will automatically check details of the user if they are logged in etc
+	$user = new User();
+	
+	// A user who has been given a password by someone else (including the default admin account) must change it before using the system
+	if($user->authenticated && !empty($user->details['must_change_password'])) {
+		// Allow the change password and log out pages, redirect anything else to the change password page
+		if(!in_array(basename($_SERVER['SCRIPT_NAME']), array(PAGELINK_CHANGEPASSWORD, PAGELINK_LOGOUT))) {
+			Redirect::to(PAGELINK_CHANGEPASSWORD);
+		}
+	}
 
 ?>

@@ -64,7 +64,8 @@ CREATE TABLE `logs` (
   `user` varchar(200) DEFAULT NULL,
   `ip` varchar(200) DEFAULT NULL,
   `user_agent` varchar(200) DEFAULT NULL,
-  PRIMARY KEY (`log_id`)
+  PRIMARY KEY (`log_id`),
+  KEY `ip_datetime` (`ip`,`datetime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*Data for the table `logs` */
@@ -76,16 +77,17 @@ DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `user_id` varchar(12) NOT NULL,
   `username` varchar(100) DEFAULT NULL,
-  `hashed_password` varchar(100) DEFAULT NULL,
+  `hashed_password` varchar(255) DEFAULT NULL,
   `full_name` varchar(100) DEFAULT NULL,
+  `must_change_password` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'User must choose a new password at next login',
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*Data for the table `users` */
 
-insert  into `users`(`user_id`,`username`,`hashed_password`,`full_name`) values 
-('PB0gY2TZKYTc','admin','$2y$10$Mjg4OGQ1NzdmNWY2ZGJiO.5O1IjWagPSmROXjw9h1IWz3JYyr5Iu.','Admin User');
+insert  into `users`(`user_id`,`username`,`hashed_password`,`full_name`,`must_change_password`) values 
+('PB0gY2TZKYTc','admin','$2y$10$Mjg4OGQ1NzdmNWY2ZGJiO.5O1IjWagPSmROXjw9h1IWz3JYyr5Iu.','Admin User',1);
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;

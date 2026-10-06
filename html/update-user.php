@@ -44,7 +44,7 @@
 				if(!isset($_POST["full_name"]) 			|| empty($_POST["full_name"])) 			{ $errors[] = $validation["field_required"]["user"]["full_name"]; };
 				
 				// Check that the submitted CSRF token is the same as the one in the $_SESSION to prevent cross site request forgery
-				if(!CSRF::check_token($_POST['csrf_token']))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
+				if(!CSRF::check_token($_POST['csrf_token'] ?? null))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
 				
 				// Length of fields
 				$length_username 			= 		strlen($_POST["username"]);
@@ -114,22 +114,15 @@
 				if(!isset($_POST["password"]) 			|| empty($_POST["password"])) 			{ $errors[] = $validation["field_required"]["user"]["password"]; };
 				if(!isset($_POST["confirm_password"]) 	|| empty($_POST["confirm_password"])) 	{ $errors[] = $validation["field_required"]["user"]["confirm_password"]; };
 				
+				// Check that the submitted CSRF token is the same as the one in the $_SESSION to prevent cross site request forgery
+				if(!CSRF::check_token($_POST['csrf_token'] ?? null))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
+				
 				// Length of fields
 				$length_password 			= 		strlen($_POST["password"]);
 				$length_confirm_password 	= 		strlen($_POST["confirm_password"]);
 				
-				// Password validation
-				// Password must be at least 8 characters in length
-				if($length_password < 8) 		{ $errors[] = $validation["too_short"]["user"]["password"]; };
-				// Password must be the same as the confirmed password
-				if($_POST["password"] !== $_POST["confirm_password"]) 	{ $errors[] = $validation["password"]["no_match"]; };
-				
-				// Password must contain at least 1 lower case character (a-z)
-				if(preg_match("~[a-z]~", $_POST["password"]) == 0) { $errors[] = $validation["password"]["no_lowercase"]; };
-				// Password must contain at least 1 upper case character (A-Z)
-				if(preg_match("~[A-Z]~", $_POST["password"]) == 0) { $errors[] = $validation["password"]["no_uppercase"]; };
-				// Password must contain at least 1 numeric character (0-9)
-				if(preg_match("~[0-9]~", $_POST["password"]) == 0) { $errors[] = $validation["password"]["no_numeric"]; };
+				// Password validation, such as length and complexity rules
+				$errors = array_merge($errors, $user->password_errors($_POST["password"] ?? "", $_POST["confirm_password"] ?? ""));
 				
 				// If no errors have been found during the field validations
 				if(empty($errors)) {
@@ -138,6 +131,8 @@
 					
 					// Assign values to an array which will be used as part of the update
 					if(isset($_POST['password']) && !empty($_POST['password'])) 						{ $update_values['hashed_password'] = $user->password_encrypt($_POST['password']); } else { $update_values['hashed_password'] = null; };
+					// A password set by another user is temporary, so that user must choose their own password when they next log in
+					$update_values['must_change_password'] = ($found_user['user_id'] == $user->details['user_id']) ? 0 : 1;
 					
 					// Execute the update
 					$result = $user->update($update_values, $found_user['user_id']);

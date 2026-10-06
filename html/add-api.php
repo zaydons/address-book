@@ -41,7 +41,7 @@
 		}; // Close if(isset($_POST['ip_address']) {
 		
 		// Check that the submitted CSRF token is the same as the one in the $_SESSION to prevent cross site request forgery
-		if(!CSRF::check_token($_POST['csrf_token']))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
+		if(!CSRF::check_token($_POST['csrf_token'] ?? null))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
 		
 		// If no errors have been found during the field validations
 		if(empty($errors)) {
@@ -61,7 +61,7 @@
 				// API token was successfully added to the database
 				// Log action of add entry success, with API token added 
 				// Create new Log instance, and log the action to the database
-				$log = new Log('api_add_success', 'Token (' . $api_token . ') created.');
+				$log = new Log('api_add_success', 'Token (' . API::mask_token($api_token) . ') created.');
 				// Delete the API token from session to avoid resubmission of the same API token
 				$session->remove('api_token');
 				// Add session message

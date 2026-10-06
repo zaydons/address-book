@@ -22,6 +22,31 @@
 			return $this->db->query('SELECT * FROM logs', PDO::FETCH_ASSOC);
 		}
 		
+		// Count the failed logins since a given time, either from an IP address or for a username
+		public function count_failed_logins($since, $ip = null, $username = null) {
+			// Failed logins are recorded with an action starting "Login Failed"
+			$sql = "SELECT COUNT(*) FROM logs WHERE datetime >= :since ";
+			if($ip !== null) {
+				$sql .= "AND ip = :ip AND action LIKE 'Login Failed%'";
+			} else {
+				// Only failed passwords record the username, so match that exact action
+				$sql .= "AND action = :action";
+			}
+			$stmt = $this->db->prepare($sql);
+			
+			// Bind values to the prepared statement
+			$stmt->bindValue(':since', date('Y-m-d H:i:s', $since));
+			if($ip !== null) {
+				$stmt->bindValue(':ip', $ip);
+			} else {
+				$stmt->bindValue(':action', $this->get_action('login_failed', 'Failed authentication for username: ' . $username));
+			}
+			$stmt->execute();
+			
+			// Return the number of failed logins found
+			return (int) $stmt->fetchColumn();
+		}
+		
 		// Method to add a new entry to the logs table in the database
 		public function action($action = null, $additional_message = null) {
 			global $user;
@@ -54,11 +79,14 @@
 			$action = $this->get_action($action, $additional_message);
 			$stmt->bindParam(':action', $action);
 			$url = site_url() . $_SERVER['REQUEST_URI'];
+			// Hide any API token sent in the URL so that it isn't stored in the logs
+			$url = preg_replace('/([?&]t=)[^&]*/', '$1[hidden]', $url);
 			$stmt->bindParam(':url', $url);
 			$name = $user->username ? $user->name . ' [' . $user->username . ']' : 'Unknown';
 			$stmt->bindParam(':user', $name);
 			$stmt->bindParam(':ip', $_SERVER['REMOTE_ADDR']);
-			$stmt->bindParam(':user_agent', $_SERVER['HTTP_USER_AGENT']);
+			$user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+			$stmt->bindParam(':user_agent', $user_agent);
 			
 			// Execute the prepared statement
 			$result = $stmt->execute();
@@ -91,6 +119,23 @@
 					break;
 				case 'login_success' :
 					$action = 'Login Success';
+					break;
+				case 'login_locked' :
+					$action = 'Login Blocked: Too many failed login attempts';
+					if($additional_message) {
+						$action .= ': ' . $additional_message;
+					};
+					break;
+				case 'password_change_success' :
+					$action = 'Password Change Success';
+					break;
+				case 'password_change_failed' :
+					$action = 'Password Change Failed';
+					if($additional_message == 'database') {
+						$action .= ': There was an error making changes to the database.';
+					} elseif($additional_message) {
+						$action .= ': ' . $additional_message;
+					}
 					break;
 				case 'login_redirect' :
 					$action = 'User redirected from login page due to already being logged in';

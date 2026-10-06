@@ -30,7 +30,7 @@
 		if(!isset($_POST["confirm_password"]) 	|| empty($_POST["confirm_password"])) 	{ $errors[] = $validation["field_required"]["user"]["confirm_password"]; };
 		
 		// Check that the submitted CSRF token is the same as the one in the $_SESSION to prevent cross site request forgery
-		if(!CSRF::check_token($_POST['csrf_token']))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
+		if(!CSRF::check_token($_POST['csrf_token'] ?? null))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
 		
 		// Length of fields
 		$length_username 			= 		strlen($_POST["username"]);
@@ -42,18 +42,8 @@
 		if($length_username > 100) 		{ $errors[] = $validation["too_long"]["user"]["username"]; };
 		if($length_username > 100) 		{ $errors[] = $validation["too_long"]["user"]["full_name"]; };
 		
-		// Password validation
-		// Password must be at least 8 characters in length
-		if($length_password < 8) 		{ $errors[] = $validation["too_short"]["user"]["password"]; };
-		// Password must be the same as the confirmed password
-		if($_POST["password"] !== $_POST["confirm_password"]) 	{ $errors[] = $validation["password"]["no_match"]; };
-		
-		// Password must contain at least 1 lower case character (a-z)
-		if(preg_match("~[a-z]~", $_POST["password"]) == 0) { $errors[] = $validation["password"]["no_lowercase"]; };
-		// Password must contain at least 1 upper case character (A-Z)
-		if(preg_match("~[A-Z]~", $_POST["password"]) == 0) { $errors[] = $validation["password"]["no_uppercase"]; };
-		// Password must contain at least 1 numeric character (0-9)
-		if(preg_match("~[0-9]~", $_POST["password"]) == 0) { $errors[] = $validation["password"]["no_numeric"]; };
+		// Password validation, such as length and complexity rules
+		$errors = array_merge($errors, $user->password_errors($_POST["password"] ?? "", $_POST["confirm_password"] ?? ""));
 		
 		// If no errors have been found during the field validations
 		if(empty($errors)) {
@@ -70,6 +60,8 @@
 				!empty($_POST['username']) 					? $fields['username'] = $_POST['username']									: $fields['username'] = null;
 				!empty($_POST['full_name']) 				? $fields['full_name'] = $_POST['full_name'] 								: $fields['full_name'] = null;
 				!empty($_POST['password']) 					? $fields['hashed_password'] = $user->password_encrypt($_POST['password']) 	: $fields['hashed_password'] = null;
+				// The password is set by another user, so the new user must choose their own password when they first log in
+				$fields['must_change_password'] = 1;
 				
 				// Create the new contact, inserting the fields from the $fields array
 				$result = $user->create($fields);
