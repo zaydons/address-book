@@ -23,6 +23,8 @@ Security fixes. Existing installations must run [sql/upgrades/1.1.0.sql](sql/upg
 - Docker: PHP updated to version `8.5`.
 - Updated Bootstrap from 3.4.1 to 5.3.8 and DataTables from 1.10.15 to 3.1.3, and removed jQuery, which neither needs. This fixes the navigation menu not opening on small screens, which broke when jQuery was updated to 3.5.0.
 - Pages now scale correctly on phones, and wide tables scroll within the page instead of making the whole page scroll sideways.
+- Added support for running as a TrueNAS SCALE custom app: production images for the system (Apache and PHP) and the database, published to the GitHub Container Registry by GitHub Actions, and a ready-to-use [TrueNAS YAML file](truenas/address-book.yaml).
+- Settings can be set as environment variables as well as in `settings.local.inc.php`.
 - Added a dark theme. It follows the device's light/dark setting, and a button in the navigation bar switches between Auto, Dark and Light (remembered in the browser).
 - Fixed PHP 8.1+ deprecation notices when viewing, updating or deleting a contact without an email address or phone number, and when a form is submitted with fields missing.
 - Documented running behind a reverse proxy.

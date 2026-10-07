@@ -1,0 +1,8 @@
+# Keep secrets, local settings and files the images don't need out of the build
+.git
+.github
+.env
+includes/settings.local.inc.php
+screenshots
+truenas
+*.md

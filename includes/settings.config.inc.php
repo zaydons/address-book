@@ -1,16 +1,26 @@
 <?php
 	
-	// Check if a custom settings file has been created with all the relevant constants
-	if(!file_exists("../includes/settings.local.inc.php")) {
-		// Output to screen that the file is missing and go no further
-		echo 'A config file could not be found. Please create a file inside the includes/ directory called "settings.local.inc.php".';
+	// Settings are read from includes/settings.local.inc.php if it exists, and any that it doesn't set are read from environment variables
+	// Environment variables allow the system to be configured without editing files, such as when running in a container (see the README)
+	if(file_exists(__DIR__ . "/settings.local.inc.php")) {
+		require_once(__DIR__ . "/settings.local.inc.php");
+	};
+	
+	// Settings which can be set as environment variables
+	foreach(array('DB_SERVER', 'DB_USER', 'DB_PASS', 'DB_NAME', 'SITE_URL', 'TIMEZONE', 'LOGIN_MAX_FAILED_USERNAME', 'LOGIN_MAX_FAILED_IP', 'LOGIN_LOCKOUT_MINUTES') as $setting_name) {
+		if(!defined($setting_name) && getenv($setting_name) !== false) {
+			define($setting_name, getenv($setting_name));
+		};
+	};
+	
+	// Check that settings have been provided in one of the two ways
+	if(!defined('DB_SERVER') && !defined('DB_NAME')) {
+		// Output to screen that the settings are missing and go no further
+		echo 'The system has not been configured. Please create a file inside the includes/ directory called "settings.local.inc.php", or set the settings as environment variables.';
 		echo '<br>';
 		echo 'For an example file simply create a copy of the "EXAMPLE.settings.local.inc.php" and rename it to "settings.local.inc.php", you can then input the details relating to your set up.';
 		die();
 	};
-	
-	// Require the localsetting.inc.php
-	require_once('settings.local.inc.php');
 	
 	// Check that the required settings for the system to function have been defined
 	// Initialise an $errors array to store any errors

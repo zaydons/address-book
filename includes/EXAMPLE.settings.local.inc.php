@@ -1,5 +1,10 @@
 <?php
 	/**
+	 * Each of these settings can also be set as an environment variable with the same name, such as when running in a container.
+	 * A value set in this file takes priority over an environment variable.
+	 */
+
+	/**
 	 * The IP/hostname of the MySQL/MariaDB server.
 	 * If you are using a Docker environment then this should be the name of your Docker MySQL/MariaDB container.
 	 * Otherwise this should be the address of your database server, typically this is 127.0.0.1.

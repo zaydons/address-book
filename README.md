@@ -4,7 +4,7 @@ Address Book is a simple PHP-based contact list manager with authentication, log
 
 ## Installation
 
-There are 2 methods to installation. Regardless of which method you choose you should first complete some prerequisites.
+There are 3 methods to installation. To run the system as a custom app on TrueNAS SCALE, skip to [TrueNAS SCALE](#3-truenas-scale). For the other 2 methods you should first complete some prerequisites.
 
 Create a copy of the [EXAMPLE.settings.local.inc.php](includes/EXAMPLE.settings.local.inc.php) with the name of `settings.local.inc.php`. This file should exist in the [includes](includes/) directory. In this file are a number of different values which can be set based on your environment.
 
@@ -87,6 +87,39 @@ You should then set your `settings.local.inc.php` values to match your environme
 
 You should configure your web server so that the document root is set as the [html](html) directory. However, the web server user for your configuration should have access to both the [html](html/) and [includes](includes/) directories.
 
+### 3. TrueNAS SCALE
+
+The system can run as a custom app on TrueNAS SCALE 24.10 (Electric Eel) or later. It uses 2 prebuilt images, which GitHub Actions builds and publishes to the GitHub Container Registry (see [.github/workflows/docker-publish.yml](.github/workflows/docker-publish.yml)):
+
+- `ghcr.io/zaydons/address-book` - the system, running on Apache and PHP 8.5.
+- `ghcr.io/zaydons/address-book-db` - MySQL, which creates the database and tables the first time it starts.
+
+No files need to be copied to TrueNAS. The system is configured with environment variables instead of a `settings.local.inc.php` file.
+
+#### Publishing the images (once)
+
+1. Push to the `main` branch, or run the **Docker images** workflow from the **Actions** tab on GitHub. On a fork, you may need to enable GitHub Actions in the **Actions** tab first.
+2. On GitHub, open each of the 2 packages (from **Packages** on your profile) and check under **Package settings** that the visibility is **Public**, so that TrueNAS can download them. If you keep them private, add your GitHub username and a personal access token with the `read:packages` scope as a registry login in TrueNAS instead.
+
+#### Installing the app
+
+1. In TrueNAS, go to **Apps**, then **Discover Apps**, open the menu (three dots) and choose **Install via YAML**.
+2. Give the app a name, such as `address-book`.
+3. Paste in the contents of [truenas/address-book.yaml](truenas/address-book.yaml), and before saving change:
+   - the database password on the `x-db-password` line (it is used by both containers),
+   - `SITE_URL` to the address you will use, such as `http://192.168.1.10:8080/`,
+   - `TIMEZONE` if you don't want UTC.
+4. Save. The first start takes a minute or so while the database is set up. The app waits for the database to be ready.
+5. Open `http://<your TrueNAS address>:8080/` and log in with the default credentials below. You will be asked to choose a new password.
+
+TrueNAS uses ports 80 and 443 for its own web interface, so the system uses port 8080. To use a different port, change the first number in `"8080:80"`, and in `SITE_URL`.
+
+The database is kept in a Docker volume by default. To keep it in a dataset instead, so that it is included in your snapshots and backups, see the comment on the `volumes` line in the YAML file.
+
+To update to newer images, edit the app in TrueNAS and save it again, or use the app's option to pull the latest images. For more control over when updates happen, replace `latest` in both `image` lines with a version tag, such as `1.1.0`, once a version has been tagged.
+
+For HTTPS, put the system behind a reverse proxy (see [Running Behind a Reverse Proxy](#running-behind-a-reverse-proxy)) and set `SITE_URL` to the `https://` address.
+
 ### Testing
 
 Once you have finished running one of the above methods you can then test if the system is working by visiting the address of the server in a browser.
@@ -121,7 +154,10 @@ Then change `DB_USER` and `DB_PASS` in your `settings.local.inc.php`.
 
 ## Local Settings Configuration Values
 
-There are several configuration values which can be set in the `includes/settings.local.inc.php` file. Below lists settings with their appropriate values:
+There are several configuration values which can be set in the `includes/settings.local.inc.php` file. Each of them can also be set as an environment variable with the same name, which is how the [TrueNAS app](#3-truenas-scale) is configured. A value in `settings.local.inc.php` takes priority over an environment variable. Below lists settings with their appropriate values:
+
+- `DB_SERVER`, `DB_USER`, `DB_PASS` and `DB_NAME` are the database connection details, as described in the installation steps above.
+- `SITE_URL` is the address used to access the system.
 
 - `TIMEZONE` should be set to the timezone you require for the system. See the [PHP Manual](https://www.php.net/manual/en/timezones.php) for options. 
 - `LOGIN_MAX_FAILED_USERNAME` (optional, default `5`) is the number of failed logins allowed for one username within the lockout window. Further attempts for that username are blocked until the window has passed.

@@ -37,9 +37,9 @@
 		if(empty($errors)) {
 			// Check whether there have been too many recent failed logins for this username or from this IP address
 			$logs = new Log();
-			$window_start = time() - (LOGIN_LOCKOUT_MINUTES * 60);
-			$login_locked = $logs->count_failed_logins($window_start, null, $_POST['username']) >= LOGIN_MAX_FAILED_USERNAME
-				|| $logs->count_failed_logins($window_start, $_SERVER['REMOTE_ADDR']) >= LOGIN_MAX_FAILED_IP;
+			$window_start = time() - ((int) LOGIN_LOCKOUT_MINUTES * 60);
+			$login_locked = $logs->count_failed_logins($window_start, null, $_POST['username']) >= (int) LOGIN_MAX_FAILED_USERNAME
+				|| $logs->count_failed_logins($window_start, $_SERVER['REMOTE_ADDR']) >= (int) LOGIN_MAX_FAILED_IP;
 			
 			// Give each value in the form it's own variable if it is submitted
 			// Attempt a login with the submitted username/password, unless logins are currently blocked
