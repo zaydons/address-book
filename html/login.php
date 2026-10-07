@@ -106,7 +106,7 @@
 						
 						<div class="pt-15">
 							<label class="sr-only">Username</label>
-							<input type="text" name="username" class="form-control" placeholder="Username" <?php if(isset($_POST["username"])) { echo "value=\"{$_POST["username"]}\""; }; ?> autofocus>
+							<input type="text" name="username" class="form-control" placeholder="Username" <?php if(isset($_POST["username"]) && is_string($_POST["username"])) { echo "value=\"" . htmlentities($_POST["username"]) . "\""; }; ?> autofocus>
 						</div>
 						<div class="pt-15">
 							<label class="sr-only">Password</label>
