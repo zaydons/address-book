@@ -101,24 +101,24 @@
 			<!-- CONTENT -->
 			<?php $session->output_message(); ?>
 			
-			<form class="form-horizontal" action="" method="post">
+			<form action="" method="post">
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">API Token</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">API Token</label>
 					<div class="col-sm-10">
 						<input type="text" class="form-control" value="<?php echo htmlentities($api_token); ?>" disabled>
 					</div>
 				</div>
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Cosmetic Name*</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Cosmetic Name*</label>
 					<div class="col-sm-10">
 						<input type="text" class="form-control" name="cosmetic_name" placeholder="Give the API token a cosmetic name to allow you to easily identify it (Optional)" <?php if(isset($_POST["cosmetic_name"])){ echo "value=\"" . htmlentities($_POST["cosmetic_name"]) . "\""; }; ?>>
 					</div>
 				</div>
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">IP Address**</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">IP Address**</label>
 					<div class="col-sm-10">
 						<input type="text" class="form-control" name="ip_address" placeholder="Restrict the API token to a single IP address (Optional)" <?php if(isset($_POST["ip_address"])){ echo "value=\"" . htmlentities($_POST["ip_address"]) . "\""; }; ?>>
 						<small>You are accessing this page from IP address - <?php echo htmlentities($_SERVER['REMOTE_ADDR']); ?></small>
@@ -132,9 +132,9 @@
 				
 				<input type="hidden" name="csrf_token" value="<?php echo htmlentities($csrf_token); ?>"/>
 				
-				<div class="form-group">
-					<div class="col-sm-offset-2 col-sm-10">
-						<button type="submit" name="submit" value="submit" class="btn btn-default">Submit</button>
+				<div class="row gy-2 mb-3">
+					<div class="offset-sm-2 col-sm-10">
+						<button type="submit" name="submit" value="submit" class="btn btn-primary">Submit</button>
 					</div>
 				</div>
 			</form>

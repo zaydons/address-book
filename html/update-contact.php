@@ -172,20 +172,20 @@
 			<!-- CONTENT -->
 			<?php $session->output_message(); ?>
 			
-			<form class="form-horizontal" action="" method="post">
+			<form action="" method="post">
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">First Name</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">First Name</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="first_name" placeholder="First Name" maxlength="50" <?php if(!empty($form_first_name)) { echo "value=\"" . $form_first_name . "\""; }; ?> required>
 					</div>
 					
-					<label class="col-sm-2 control-label">Middle Name</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Middle Name</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="middle_name" placeholder="Middle Name" maxlength="50" <?php if(!empty($form_middle_name)) { echo "value=\"" . $form_middle_name . "\""; }; ?>>
 					</div>
 					
-					<label class="col-sm-2 control-label">Last Name</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Last Name</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="last_name" placeholder="Last Name" maxlength="50" <?php if(!empty($form_last_name)) { echo "value=\"" . $form_last_name . "\""; }; ?> required>
 					</div>
@@ -193,25 +193,25 @@
 				
 				<hr>
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Contact Number Home</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Contact Number Home</label>
 					<div class="col-sm-4">
 						<input type="number" class="form-control" name="contact_number_home" placeholder="Contact Number Home" maxlength="20" <?php if(!empty($form_contact_number_home)) { echo "value=\"" . $form_contact_number_home . "\""; }; ?>>
 					</div>
 					
-					<label class="col-sm-2 control-label">Contact Number Mobile</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Contact Number Mobile</label>
 					<div class="col-sm-4">
 						<input type="number" class="form-control" name="contact_number_mobile" placeholder="Contact Number Mobile" maxlength="20" <?php if(!empty($form_contact_number_mobile)) { echo "value=\"" . $form_contact_number_mobile . "\""; }; ?>>
 					</div>
 				</div>
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Email</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Email</label>
 					<div class="col-sm-4">
 						<input type="email" class="form-control" name="contact_email" placeholder="Email" maxlength="100" <?php if(!empty($form_contact_email)) { echo "value=\"" . $form_contact_email . "\""; }; ?>>
 					</div>
 					
-					<label class="col-sm-2 control-label">Date Of Birth</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Date Of Birth</label>
 					<div class="col-sm-4">
 						<input type="date" class="form-control" name="date_of_birth" placeholder="Date Of Birth" <?php if(!empty($form_date_of_birth)) { echo "value=\"" . $form_date_of_birth . "\""; }; ?>>
 					</div>
@@ -219,28 +219,28 @@
 				
 				<hr>
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Address Line 1</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Address Line 1</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="address_line_1" placeholder="Address Line 1" maxlength="100" <?php if(!empty($form_address_line_1)) { echo "value=\"" . $form_address_line_1 . "\""; }; ?> required>
 					</div>
 					
-					<label class="col-sm-2 control-label">Address Line 2</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Address Line 2</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="address_line_2" placeholder="Address Line 2" maxlength="100" <?php if(!empty($form_address_line_2)) { echo "value=\"" . $form_address_line_2 . "\""; }; ?>>
 					</div>
 					
-					<label class="col-sm-2 control-label">Address Town</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Address Town</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="address_town" placeholder="Address Town" maxlength="100" <?php if(!empty($form_address_town)) { echo "value=\"" . $form_address_town . "\""; }; ?> required>
 					</div>
 					
-					<label class="col-sm-2 control-label">Address County</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Address County</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="address_county" placeholder="Address County" maxlength="100" <?php if(!empty($form_address_county)) { echo "value=\"" . $form_address_county . "\""; }; ?> required>
 					</div>
 					
-					<label class="col-sm-2 control-label">Address Postcode</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Address Postcode</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="address_post_code" placeholder="Address Postcode" maxlength="20" <?php if(!empty($form_address_post_code)) { echo "value=\"" . $form_address_post_code . "\""; }; ?> required>
 					</div>
@@ -248,9 +248,9 @@
 				
 				<input type="hidden" name="csrf_token" value="<?php echo htmlentities($csrf_token); ?>"/>
 				
-				<div class="form-group">
-					<div class="col-sm-offset-2 col-sm-10">
-						<button type="submit" name="submit" value="submit" class="btn btn-default">Submit</button>
+				<div class="row gy-2 mb-3">
+					<div class="offset-sm-2 col-sm-10">
+						<button type="submit" name="submit" value="submit" class="btn btn-primary">Submit</button>
 					</div>
 				</div>
 			</form>

@@ -81,7 +81,7 @@
 			
 			<hr />
 			
-			<table id="<?php echo $datatables_table_id; ?>">
+			<table id="<?php echo $datatables_table_id; ?>" class="table table-striped table-hover" style="width: 100%">
 				<thead>
 					<tr>
 						<th>API Token</th>
@@ -107,7 +107,7 @@
 					?>
 				</tbody>
 			</table>
-			<a href="<?php echo PAGELINK_APIADD; ?>" type="button" class="btn btn-info">Add API Token</a>
+			<a href="<?php echo PAGELINK_APIADD; ?>" type="button" class="btn btn-primary">Add API Token</a>
 			<!-- /CONTENT -->
 
 <?php

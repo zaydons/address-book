@@ -96,40 +96,40 @@
 			<div class="alert alert-info" role="alert"><?php echo htmlentities($notification["password_change"]["required"]); ?></div>
 			<?php }; ?>
 
-			<form class="form-horizontal" action="" method="post">
+			<form action="" method="post">
 
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Current Password</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Current Password</label>
 					<div class="col-sm-10">
 						<input type="password" class="form-control" name="current_password" placeholder="Current Password" autocomplete="current-password" required>
 					</div>
 				</div>
 
-				<div class="form-group">
-					<label class="col-sm-2 control-label">New Password</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">New Password</label>
 					<div class="col-sm-10">
 						<input type="password" class="form-control" name="password" placeholder="New Password" autocomplete="new-password" required>
 					</div>
 				</div>
 
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Confirm New Password</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Confirm New Password</label>
 					<div class="col-sm-10">
 						<input type="password" class="form-control" name="confirm_password" placeholder="Confirm New Password" autocomplete="new-password" required>
 					</div>
 				</div>
 
-				<div class="form-group">
-					<div class="col-sm-offset-2 col-sm-10">
+				<div class="row gy-2 mb-3">
+					<div class="offset-sm-2 col-sm-10">
 						<p>Your password must be at least 8 characters long, and contain at least 1 lower case character (a-z), 1 upper case character (A-Z) and 1 number (0-9).</p>
 					</div>
 				</div>
 
 				<input type="hidden" name="csrf_token" value="<?php echo htmlentities($csrf_token); ?>"/>
 
-				<div class="form-group">
-					<div class="col-sm-offset-2 col-sm-10">
-						<button type="submit" name="submit" value="submit" class="btn btn-default">Change Password</button>
+				<div class="row gy-2 mb-3">
+					<div class="offset-sm-2 col-sm-10">
+						<button type="submit" name="submit" value="submit" class="btn btn-primary">Change Password</button>
 					</div>
 				</div>
 			</form>

@@ -38,7 +38,7 @@
 			<form action="<?php echo PAGELINK_LOGOUT; ?>" method="post">
 				<p>Are you sure you want to log out?</p>
 				<input type="hidden" name="csrf_token" value="<?php echo htmlentities($csrf_token); ?>"/>
-				<button type="submit" class="btn btn-default">Log Out</button>
+				<button type="submit" class="btn btn-primary">Log Out</button>
 			</form>
 			<!-- /CONTENT -->
 

@@ -1,6 +1,6 @@
 # Address Book
 
-Address Book is a simple PHP-based contact list manager with authentication, logging features and an API to allow integration with other services. Built using the [Bootstrap](https://getbootstrap.com/) framework, [DataTables](https://datatables.net/), [jQuery](https://jquery.com/) and [FontAwesome](https://fontawesome.com/) to maintain a user-friendly functionality.
+Address Book is a simple PHP-based contact list manager with authentication, logging features and an API to allow integration with other services. Built using the [Bootstrap](https://getbootstrap.com/) 5 framework, [DataTables](https://datatables.net/) and [FontAwesome](https://fontawesome.com/) to maintain a user-friendly functionality.
 
 ## Installation
 

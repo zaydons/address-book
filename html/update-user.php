@@ -200,26 +200,26 @@
 			<!-- CONTENT -->
 			<?php $session->output_message(); ?>
 			
-			<form class="form-horizontal" action="" method="post">
-				<div class="col-sm-offset-1">
+			<form action="" method="post">
+				<div class="offset-sm-1">
 					<h4>Update Name/Username</h4>
 				</div>
 				
-				<div class="form-group">
-					<div class="col-sm-offset-1 col-sm-11">
+				<div class="row gy-2 mb-3">
+					<div class="offset-sm-1 col-sm-11">
 						<p><strong>WARNING</strong> Changing your own user account "Full Name" or "Username" will cause you to be automatically logged out. If you change your username be sure that you know your new username so that you will be able to regain access to the system.</p>
 					</div>
 				</div>
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Full Name</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Full Name</label>
 					<div class="col-sm-10">
 						<input type="text" class="form-control" name="full_name" placeholder="Full Name" maxlength="100" <?php if(!empty($form_full_name)) { echo "value=\"" . $form_full_name . "\""; }; ?> required>
 					</div>
 				</div>
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Username</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Username</label>
 					<div class="col-sm-10">
 						<input type="text" class="form-control" name="username" placeholder="Username" maxlength="100" <?php if(!empty($form_username)) { echo "value=\"" . $form_username . "\""; }; ?> required>
 					</div>
@@ -227,22 +227,22 @@
 				
 				<input type="hidden" name="csrf_token" value="<?php echo htmlentities($csrf_token); ?>"/>
 				
-				<div class="form-group">
-					<div class="col-sm-offset-2 col-sm-10">
-						<button type="submit" name="submit_name" value="submit_name" class="btn btn-default">Update Name/Username</button>
+				<div class="row gy-2 mb-3">
+					<div class="offset-sm-2 col-sm-10">
+						<button type="submit" name="submit_name" value="submit_name" class="btn btn-primary">Update Name/Username</button>
 					</div>
 				</div>
 			</form>
 			
 			<hr>
 			
-			<form class="form-horizontal" action="" method="post">
-				<div class="col-sm-offset-1">
+			<form action="" method="post">
+				<div class="offset-sm-1">
 					<h4>Update Password</h4>
 				</div>
 				
-				<div class="form-group">
-					<div class="col-sm-offset-1 col-sm-11">
+				<div class="row gy-2 mb-3">
+					<div class="offset-sm-1 col-sm-11">
 						<p>Passwords <strong>MUST</strong> comply with the following rules:</p>
 						<ul>
 							<li>Password must be a minimum of 8 characters in length.</li>
@@ -253,13 +253,13 @@
 					</div>
 				</div>
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Password</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Password</label>
 					<div class="col-sm-4">
 						<input type="password" class="form-control" name="password" placeholder="Password" required>
 					</div>
 					
-					<label class="col-sm-2 control-label">Confirm Password</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Confirm Password</label>
 					<div class="col-sm-4">
 						<input type="password" class="form-control" name="confirm_password" placeholder="Confirm Password" required>
 					</div>
@@ -267,9 +267,9 @@
 				
 				<input type="hidden" name="csrf_token" value="<?php echo htmlentities($csrf_token); ?>"/>
 				
-				<div class="form-group">
-					<div class="col-sm-offset-2 col-sm-10">
-						<button type="submit" name="submit_password" value="submit_password" class="btn btn-default">Update Password</button>
+				<div class="row gy-2 mb-3">
+					<div class="offset-sm-2 col-sm-10">
+						<button type="submit" name="submit_password" value="submit_password" class="btn btn-primary">Update Password</button>
 					</div>
 				</div>
 			</form>

@@ -97,7 +97,7 @@
 			
 			<!-- CONTENT -->
 			<div class="row">
-				<div class="col-sm-6 col-sm-offset-3">
+				<div class="col-sm-6 offset-sm-3">
 				
 					<form class="form-signin" action="" method="post">
 						<h2 class="form-signin-heading text-center"><?php echo $page_name; ?></h2>
@@ -105,16 +105,16 @@
 						<?php $session->output_message(); ?>
 						
 						<div class="pt-15">
-							<label class="sr-only">Username</label>
+							<label class="visually-hidden">Username</label>
 							<input type="text" name="username" class="form-control" placeholder="Username" <?php if(isset($_POST["username"]) && is_string($_POST["username"])) { echo "value=\"" . htmlentities($_POST["username"]) . "\""; }; ?> autofocus>
 						</div>
 						<div class="pt-15">
-							<label class="sr-only">Password</label>
+							<label class="visually-hidden">Password</label>
 							<input type="password" name="password" class="form-control" placeholder="Password">
 						</div>
 						<input type="hidden" name="csrf_token" value="<?php echo htmlentities($csrf_token); ?>"/>
 						<div class="pt-15 text-center">
-							<button class="btn btn-info" name="submit" type="submit" value="submit">Sign in</button>
+							<button class="btn btn-primary" name="submit" type="submit" value="submit">Sign in</button>
 						</div>
 					</form>
 					

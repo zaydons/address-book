@@ -119,12 +119,11 @@
 			<p><strong>This process is <u>IRREVERSIBLE</u>. Once a contact has been deleted the only way to restore them to the contact list is by manually re-adding.</strong></p>
 			<p>Please confirm that you would like to <strong>permanently delete</strong> <?php echo $contact->full_name; ?> from the system.</p>
 
-			<form class="form-horizontal" action="" method="post">
+			<form action="" method="post">
 
-				<div class="checkbox">
-					<label>
-						<input type="checkbox" name="confirm_delete"> Yes, I am sure that I want to <strong>permanently delete</strong> <?php echo $contact->full_name; ?>
-					</label>
+				<div class="form-check">
+					<input class="form-check-input" type="checkbox" name="confirm_delete" id="confirm_delete">
+					<label class="form-check-label" for="confirm_delete">Yes, I am sure that I want to <strong>permanently delete</strong> <?php echo $contact->full_name; ?></label>
 				</div>
 				
 				<input type="hidden" name="csrf_token" value="<?php echo htmlentities($csrf_token); ?>"/>

@@ -1,39 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title><?php echo page_name(); ?></title>
-		
+
 		<!-- Light/dark theme, applied before anything else so that the page isn't shown in the wrong theme first -->
 		<script src="js/theme.js"></script>
-		
-		<!-- jQuery -->
-		<script src="assets/jQuery/3.5.0/jquery.min.js"></script>
+
+		<!-- Bootstrap (the bundle includes Popper) -->
+		<link rel="stylesheet" href="assets/bootstrap/5.3.8/css/bootstrap.min.css">
+		<script src="assets/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
 <?php
 		if(isset($datatables_required) && $datatables_required == 1) {
 			$datatables_source = <<<FILEDOC
-		
-		<!-- DataTables -->
-		<link rel="stylesheet" type="text/css" href="assets/DataTables/1.10.15/css/jquery.dataTables.css">
-		<script type="text/javascript" charset="utf8" src="assets/DataTables/1.10.15/js/jquery.dataTables.js"></script>
-		
+
+		<!-- DataTables, styled for Bootstrap 5 -->
+		<link rel="stylesheet" href="assets/DataTables/3.1.3/css/dataTables.bootstrap5.min.css">
+		<script src="assets/DataTables/3.1.3/js/dataTables.min.js"></script>
+		<script src="assets/DataTables/3.1.3/js/dataTables.bootstrap5.min.js"></script>
+
 FILEDOC;
 			echo $datatables_source;
 		};
 ?>
-		
-		<!-- Twitter Bootstrap -->
-		<!-- Minified CSS -->
-		<link rel="stylesheet" href="assets/bootstrap/3.4.1/css/bootstrap.min.css">
-		<!-- Optional theme -->
-		<link rel="stylesheet" href="assets/bootstrap/3.4.1/css/bootstrap-theme.min.css">
-		<!-- Minified JavaScript for Bootstrap -->
-		<script src="assets/bootstrap/3.4.1/js/bootstrap.min.js"></script>
-		
+
 		<!-- Font Awesome -->
 		<link href="assets/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
-		
+
 		<!-- Main CSS -->
 		<link rel="stylesheet" href="css/main.css?v=<?php echo time(); ?>">
 
 	</head>
-	

@@ -28,11 +28,12 @@
 		} catch(e) {}
 	}
 	
-	// Set the theme on the page, which the CSS uses to choose colours
+	// Set the theme on the page using Bootstrap's colour modes (data-bs-theme)
 	function apply() {
 		var choice = getChoice();
 		var dark = choice === 'dark' || (choice === 'auto' && media !== null && media.matches);
-		document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+		document.documentElement.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
+		// Used by css/main.css to show the current choice on the theme button
 		document.documentElement.setAttribute('data-theme-choice', choice);
 	}
 	
