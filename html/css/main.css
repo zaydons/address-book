@@ -7,8 +7,17 @@
 	/* Make the log out button in the navigation bar look like the other navigation links */
 	.navbar-logout {
 		padding: 15px;
+		border: 0;
+		border-radius: 0;
+		line-height: 20px;
 		color: #777;
 		text-decoration: none;
+	}
+	/* Highlight the log out button on the log out page, the same as the active link on other pages */
+	.navbar-nav > .active .navbar-logout {
+		color: #555;
+		background-image: linear-gradient(to bottom, #dbdbdb 0, #e2e2e2 100%);
+		box-shadow: inset 0 3px 9px rgba(0, 0, 0, .075);
 	}
 	.navbar-logout:hover,
 	.navbar-logout:focus {
