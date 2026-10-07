@@ -1,33 +1,19 @@
+# Development environment: builds the same image as production, with the code mounted from this directory so that
+# changes are seen straight away. The SQLite database is kept in the address-book-data volume.
 services:
-    nginx:
-        image: nginx:1.30
-        volumes:
-            - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf
-            - ./:/var/www/html
+    app:
+        build: .
         ports:
             - 80:80
-        depends_on:
-            - php-fpm
-            - mysql
-    php-fpm:
-        build:
-            context: docker
-            dockerfile: PHP-FPM.Dockerfile
-        volumes: 
-            - ./:/var/www/html
-    mysql:
-        image: mysql:9
         volumes:
-            - 'address-book-db:/var/lib/mysql'
-            - ./sql/sql.sql:/docker-entrypoint-initdb.d/01-initialise.sql
-            - ./docker/mysql-app-user.sql:/docker-entrypoint-initdb.d/02-app-user.sql
+            - ./html:/var/www/address-book/html
+            - ./includes:/var/www/address-book/includes
+            - ./sql:/var/www/address-book/sql
+            - ./tools:/var/www/address-book/tools
+            - address-book-data:/data
         environment:
-            - MYSQL_RANDOM_ROOT_PASSWORD=yes
-            # The system connects as this user, which only has access to the address_book data
-            # Set DB_PASS in a .env file next to this file, and use the same value in includes/settings.local.inc.php
-            - MYSQL_USER=address_book
-            - MYSQL_PASSWORD=${DB_PASS:?Set DB_PASS in a .env file - see the README}
+            - SITE_URL=http://localhost/
+            - TIMEZONE=UTC
 
 volumes:
-    address-book-db:
-        driver: local
+    address-book-data:

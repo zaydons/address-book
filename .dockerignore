@@ -6,3 +6,4 @@ includes/settings.local.inc.php
 screenshots
 truenas
 *.md
+data

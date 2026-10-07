@@ -1,95 +1,56 @@
-/*
-SQLyog Ultimate v13.0.0 (64 bit)
-MySQL - 10.1.25-MariaDB : Database - address_book
-*********************************************************************
-*/
+-- Address Book database structure (SQLite)
+--
+-- The system runs this automatically the first time it opens a new database file, so it doesn't need to be run by hand.
+-- Every statement is safe to run more than once.
+-- Text lengths aren't enforced by SQLite; the system checks them when forms are submitted.
 
-/*!40101 SET NAMES utf8 */;
+-- API tokens
+CREATE TABLE IF NOT EXISTS api (
+  api_id TEXT NOT NULL PRIMARY KEY, -- Token used for API call
+  ip TEXT DEFAULT NULL, -- IP address from which API call is authorised
+  cosmetic_name TEXT -- Cosmetic description of the API token
+);
 
-/*!40101 SET SQL_MODE=''*/;
+-- Contacts in the address book
+CREATE TABLE IF NOT EXISTS contacts (
+  contact_id TEXT NOT NULL PRIMARY KEY,
+  first_name TEXT DEFAULT NULL,
+  middle_name TEXT DEFAULT NULL,
+  last_name TEXT DEFAULT NULL,
+  contact_number_home TEXT DEFAULT NULL,
+  contact_number_mobile TEXT DEFAULT NULL,
+  contact_email TEXT DEFAULT NULL,
+  date_of_birth TEXT DEFAULT NULL, -- YYYY-MM-DD
+  address_line_1 TEXT DEFAULT NULL,
+  address_line_2 TEXT DEFAULT NULL,
+  address_town TEXT DEFAULT NULL,
+  address_county TEXT DEFAULT NULL,
+  address_post_code TEXT DEFAULT NULL
+);
 
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-CREATE DATABASE /*!32312 IF NOT EXISTS*/`address_book` /*!40100 DEFAULT CHARACTER SET utf8 */;
+-- Log of actions taken in the system
+CREATE TABLE IF NOT EXISTS logs (
+  log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  datetime TEXT DEFAULT NULL, -- YYYY-MM-DD HH:MM:SS
+  action TEXT,
+  url TEXT DEFAULT NULL,
+  user TEXT DEFAULT NULL,
+  ip TEXT DEFAULT NULL,
+  user_agent TEXT DEFAULT NULL
+);
 
-USE `address_book`;
+-- Speeds up counting recent failed logins from an IP address
+CREATE INDEX IF NOT EXISTS ip_datetime ON logs (ip, datetime);
 
-/*Table structure for table `api` */
+-- Users who can log in to the system
+CREATE TABLE IF NOT EXISTS users (
+  user_id TEXT NOT NULL PRIMARY KEY,
+  username TEXT DEFAULT NULL UNIQUE COLLATE NOCASE, -- Usernames aren't case sensitive, so Admin and admin are the same user
+  hashed_password TEXT DEFAULT NULL,
+  full_name TEXT DEFAULT NULL,
+  must_change_password INTEGER NOT NULL DEFAULT 0 -- User must choose a new password at next login
+);
 
-DROP TABLE IF EXISTS `api`;
-
-CREATE TABLE `api` (
-  `api_id` varchar(12) NOT NULL COMMENT 'Token used for API call',
-  `ip` varchar(200) DEFAULT NULL COMMENT 'IP address from which API call is authorised',
-  `cosmetic_name` text COMMENT 'Cosmetic description of the API token',
-  PRIMARY KEY (`api_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `api` */
-
-/*Table structure for table `contacts` */
-
-DROP TABLE IF EXISTS `contacts`;
-
-CREATE TABLE `contacts` (
-  `contact_id` varchar(12) NOT NULL,
-  `first_name` varchar(50) DEFAULT NULL,
-  `middle_name` varchar(50) DEFAULT NULL,
-  `last_name` varchar(50) DEFAULT NULL,
-  `contact_number_home` varchar(20) DEFAULT NULL,
-  `contact_number_mobile` varchar(20) DEFAULT NULL,
-  `contact_email` varchar(100) DEFAULT NULL,
-  `date_of_birth` date DEFAULT NULL,
-  `address_line_1` varchar(100) DEFAULT NULL,
-  `address_line_2` varchar(100) DEFAULT NULL,
-  `address_town` varchar(100) DEFAULT NULL,
-  `address_county` varchar(100) DEFAULT NULL,
-  `address_post_code` varchar(20) DEFAULT NULL,
-  PRIMARY KEY (`contact_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `contacts` */
-
-/*Table structure for table `logs` */
-
-DROP TABLE IF EXISTS `logs`;
-
-CREATE TABLE `logs` (
-  `log_id` int(11) NOT NULL AUTO_INCREMENT,
-  `datetime` datetime DEFAULT NULL,
-  `action` longblob,
-  `url` varchar(200) DEFAULT NULL,
-  `user` varchar(200) DEFAULT NULL,
-  `ip` varchar(200) DEFAULT NULL,
-  `user_agent` varchar(200) DEFAULT NULL,
-  PRIMARY KEY (`log_id`),
-  KEY `ip_datetime` (`ip`,`datetime`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `logs` */
-
-/*Table structure for table `users` */
-
-DROP TABLE IF EXISTS `users`;
-
-CREATE TABLE `users` (
-  `user_id` varchar(12) NOT NULL,
-  `username` varchar(100) DEFAULT NULL,
-  `hashed_password` varchar(255) DEFAULT NULL,
-  `full_name` varchar(100) DEFAULT NULL,
-  `must_change_password` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'User must choose a new password at next login',
-  PRIMARY KEY (`user_id`),
-  UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `users` */
-
-insert  into `users`(`user_id`,`username`,`hashed_password`,`full_name`,`must_change_password`) values 
-('PB0gY2TZKYTc','admin','$2y$10$Mjg4OGQ1NzdmNWY2ZGJiO.5O1IjWagPSmROXjw9h1IWz3JYyr5Iu.','Admin User',1);
-
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+-- The default admin user (password LetMeIn123), who must choose a new password at first login
+INSERT OR IGNORE INTO users (user_id, username, hashed_password, full_name, must_change_password) VALUES
+('PB0gY2TZKYTc', 'admin', '$2y$10$Mjg4OGQ1NzdmNWY2ZGJiO.5O1IjWagPSmROXjw9h1IWz3JYyr5Iu.', 'Admin User', 1);

@@ -4,13 +4,10 @@
 # give the app a name, and paste this file. See the README for the full steps.
 #
 # Before installing, change:
-#   1. The database password below (x-db-password). It is used by both containers.
-#   2. SITE_URL to the address you will use to reach the system.
-#   3. TIMEZONE, if you don't want UTC.
+#   1. SITE_URL to the address you will use to reach the system.
+#   2. TIMEZONE, if you don't want UTC.
 #
 # On the first login you will be asked to change the default admin password (admin / LetMeIn123).
-
-x-db-password: &db-password "change-this-to-a-strong-password"
 
 services:
   app:
@@ -20,37 +17,14 @@ services:
       # TrueNAS uses ports 80 and 443 for its own web interface, so the system is on port 8080
       - "8080:80"
     environment:
-      DB_SERVER: db
-      DB_USER: address_book
-      DB_PASS: *db-password
-      DB_NAME: address_book
       SITE_URL: "http://truenas.local:8080/"
       TIMEZONE: "UTC"
-    depends_on:
-      db:
-        condition: service_healthy
-
-  db:
-    image: ghcr.io/zaydons/address-book-db:latest
-    restart: unless-stopped
-    environment:
-      # The root password is random and not needed by the system
-      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
-      MYSQL_USER: address_book
-      MYSQL_PASSWORD: *db-password
     volumes:
-      # The database is kept in a Docker volume, which survives app updates and restarts.
+      # The SQLite database is kept in a Docker volume, which survives app updates and restarts.
       # To keep it in a dataset instead (for snapshots and backups), create an empty dataset and replace
-      # this line with one like the following. MySQL sets the directory's ownership on first start.
-      #   - /mnt/tank/apps/address-book/mysql:/var/lib/mysql
-      - address-book-db:/var/lib/mysql
-    healthcheck:
-      # Uses TCP (127.0.0.1) so that it only passes once the database set-up has finished and the real server is running
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 60s
+      # this line with one like the following. The app sets the directory's ownership when it starts.
+      #   - /mnt/tank/apps/address-book:/data
+      - address-book-data:/data
 
 volumes:
-  address-book-db:
+  address-book-data:

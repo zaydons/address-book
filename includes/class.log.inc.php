@@ -74,7 +74,7 @@
 			$stmt = $this->db->prepare($sql);
 			
 			// Bind values to the prepared statement
-			$datetime = $this->current_mysql_datetime();
+			$datetime = $this->current_datetime();
 			$stmt->bindParam(':datetime', $datetime);
 			$action = $this->get_action($action, $additional_message);
 			$stmt->bindParam(':action', $action);
@@ -298,9 +298,9 @@
 			return $action;
 		}
 		
-		// Method to obtain the current datetime in MySQL format
-		private function current_mysql_datetime() {
-			// Return the current time in MySQL datetime formate 
+		// Method to obtain the current datetime in the format stored in the database
+		private function current_datetime() {
+			// Return the current time in the database datetime format (YYYY-MM-DD HH:MM:SS) 
 			return date('Y-m-d H:i:s', time());
 		}
 		

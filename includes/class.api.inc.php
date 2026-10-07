@@ -257,8 +257,7 @@
 				// Begin prepared statement to delete a single ID from the database
 				$sql = '
 					DELETE FROM api 
-					WHERE api_id = :api_id 
-					LIMIT 1
+					WHERE api_id = :api_id
 				';
 				$stmt = $this->db->prepare($sql);
 
@@ -306,9 +305,8 @@
 						}
 					}
 					
-					// Specify which API token to update and limit to update only 1 record as a fail-safe
-					$sql .= "WHERE api_id = :api_id ";
-					$sql .= "LIMIT 1";
+					// Specify which API token to update - the ID is unique, so only 1 record is updated
+					$sql .= " WHERE api_id = :api_id";
 					
 					// Begin a prepared statement using the previous $sql
 					$stmt = $this->db->prepare($sql);

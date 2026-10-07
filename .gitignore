@@ -1,5 +1,5 @@
 includes/settings.local.inc.php
 .DS_Store
 
-# Docker Compose settings, which contain the database password
-.env
+# SQLite database
+data/

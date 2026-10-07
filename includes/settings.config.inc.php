@@ -7,14 +7,14 @@
 	};
 	
 	// Settings which can be set as environment variables
-	foreach(array('DB_SERVER', 'DB_USER', 'DB_PASS', 'DB_NAME', 'SITE_URL', 'TIMEZONE', 'LOGIN_MAX_FAILED_USERNAME', 'LOGIN_MAX_FAILED_IP', 'LOGIN_LOCKOUT_MINUTES') as $setting_name) {
+	foreach(array('DB_PATH', 'SITE_URL', 'TIMEZONE', 'LOGIN_MAX_FAILED_USERNAME', 'LOGIN_MAX_FAILED_IP', 'LOGIN_LOCKOUT_MINUTES') as $setting_name) {
 		if(!defined($setting_name) && getenv($setting_name) !== false) {
 			define($setting_name, getenv($setting_name));
 		};
 	};
 	
 	// Check that settings have been provided in one of the two ways
-	if(!defined('DB_SERVER') && !defined('DB_NAME')) {
+	if(!defined('SITE_URL') && !defined('TIMEZONE')) {
 		// Output to screen that the settings are missing and go no further
 		echo 'The system has not been configured. Please create a file inside the includes/ directory called "settings.local.inc.php", or set the settings as environment variables.';
 		echo '<br>';
@@ -27,10 +27,6 @@
 	$errors = array();
 	
 	// Check that constants are defined
-	if(!defined('DB_SERVER')) 	{ $errors[] = "DB_SERVER is not defined. Please add the following as a new line to your includes/settings.local.inc.php file: <b>define('DB_SERVER', 'YOUR DATABASE IP/HOSTNAME');</b>"; };
-	if(!defined('DB_USER')) 	{ $errors[] = "DB_USER is not defined. Please add the following as a new line to your includes/settings.local.inc.php file: <b>define('DB_USER', 'YOUR DATABASE USERNAME');</b>"; };
-	if(!defined('DB_PASS')) 	{ $errors[] = "DB_PASS is not defined. Please add the following as a new line to your includes/settings.local.inc.php file: <b>define('DB_PASS', 'YOUR DATABASE USER PASSWORD');</b>"; };
-	if(!defined('DB_NAME')) 	{ $errors[] = "DB_NAME is not defined. Please add the following as a new line to your includes/settings.local.inc.php file: <b>define('DB_NAME', 'YOUR DATABASE NAME');</b>"; };
 	if(!defined('SITE_URL')) 	{ $errors[] = "SITE_URL is not defined. Please add the following as a new line to your includes/settings.local.inc.php file: <b>define('SITE_URL', 'YOUR SITE URL');</b>"; };
 	if(!defined('TIMEZONE')) 	{ $errors[] = "TIMEZONE is not defined. Please add the following as a new line to your includes/settings.local.inc.php file: <b>define('TIMEZONE', 'YOUR TIMEZONE');</b>"; };
 
@@ -46,8 +42,9 @@
 		die();
 	}; // Close if(!empty($errors))
 	
-	// Set the database driver to MySQL
-	define("DB_TYPE", "mysql");
+	// The SQLite database file, which is created if it doesn't exist
+	// By default this is in the data/ directory, which is outside of the html/ directory so that it can't be downloaded
+	defined("DB_PATH")								?	null	:	define("DB_PATH", dirname(__DIR__) . "/data/address-book.sqlite");
 
 	// Limits on failed logins, to slow down attempts to guess passwords
 	// These can be overridden in settings.local.inc.php

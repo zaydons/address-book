@@ -4,49 +4,23 @@ Address Book is a simple PHP-based contact list manager with authentication, log
 
 ## Installation
 
-There are 3 methods to installation. To run the system as a custom app on TrueNAS SCALE, skip to [TrueNAS SCALE](#3-truenas-scale). For the other 2 methods you should first complete some prerequisites.
+The system stores its data in a single [SQLite](https://sqlite.org/) database file, so no separate database server is needed. The file and its tables are created automatically the first time the system is used.
 
-Create a copy of the [EXAMPLE.settings.local.inc.php](includes/EXAMPLE.settings.local.inc.php) with the name of `settings.local.inc.php`. This file should exist in the [includes](includes/) directory. In this file are a number of different values which can be set based on your environment.
-
-For example, on a Linux system:
-
-```bash
-cp includes/EXAMPLE.settings.local.inc.php includes/settings.local.inc.php
-```
+There are 3 methods to installation: Docker, manual installation on a web server with PHP, or as a custom app on TrueNAS SCALE.
 
 ### 1. Docker (Recommended)
 
 Docker is the recommended method to set up this system due to it's ease of getting things configured quickly and also it is far less likely to be a victim of issues which may occur due to OS or versions of software. The below assumes that you have `docker` and `docker compose` installed on your system.
 
-1. Choose a password for the system's database user. Copy [.env.example](.env.example) to `.env` and set `DB_PASS` in it to a strong password. The `.env` file is ignored by Git.
+1. Build and start the system:
 
 ```bash
-cp .env.example .env
+docker compose up --build
 ```
 
-2. Build the environment. This will download any images and set up the custom images which are required to run in the next step.
+2. Visit http://localhost/ and log in (see [Testing](#testing)).
 
-```bash
-docker compose build
-```
-
-3. Once the `build` has completed successfully you can then start the environment with the `up` command.
-
-```bash
-docker compose up
-```
-
-This may do some additional downloading which wasn't done during the `build` stage. This is normal.
-
-The first time you run the `up` command the database will be initialised. An `address_book` database user is created with the password from your `.env` file, with access only to read and change data in the `address_book` database. The `root` user is given a random password which is shown in the console logs; the system doesn't need it.
-
-4. Set the values in your `settings.local.inc.php` to match the Docker environment:
-
-- `DB_SERVER` should be set to `mysql`.
-- `DB_USER` should be set to `address_book`.
-- `DB_PASS` should be set to the same password as `DB_PASS` in your `.env` file.
-- `DB_NAME` should be set to `address_book`.
-- `SITE_URL` should be set to the address from which the system will be accessible from. Typically http://localhost/ is acceptable.
+[docker-compose.yml](docker-compose.yml) builds the same image as the [TrueNAS app](#3-truenas-scale), with the code mounted from this directory so that changes are seen straight away. The database is kept in the `address-book-data` Docker volume. Settings are set as environment variables in `docker-compose.yml`, or in an `includes/settings.local.inc.php` file (see [Local Settings Configuration Values](#local-settings-configuration-values)).
 
 ### 2. Manual Installation
 
@@ -55,68 +29,56 @@ If you wish to set up the system manually then this too can be done.
 #### Requirements
 
 - A web server with PHP (8+ recommended).
-- A relational database management system (RDBMS), such as MySQL or MariaDB.
-- The `mysql` and `pdo` PHP modules should be installed and enabled for your version of PHP. For example if you are using PHP 8.5 then you would need to install `php8.5-mysql`.
-
-#### Database Configuration
-
-You should create a database called `address_book` along with a user which has permissions to this newly created database. The user only needs `SELECT`, `INSERT`, `UPDATE` and `DELETE`, so there's no need to use `root`. For example:
-
-```sql
-CREATE USER 'address_book'@'localhost' IDENTIFIED BY 'a-strong-password';
-GRANT SELECT, INSERT, UPDATE, DELETE ON `address_book`.* TO 'address_book'@'localhost';
-```
-
-You should then import the [sql/sql.sql](sql/sql.sql) file into your database to set the system up to a baseline. For example:
-
-```bash
-mysql -u <username> (-p if your user account has a password) address_book < /location/to/sql/sql.sql
-```
+- The `pdo_sqlite` PHP module, which is included with most PHP installations. For example on Debian or Ubuntu with PHP 8.5, install `php8.5-sqlite3`.
 
 #### Settings Configuration
 
-You should then set your `settings.local.inc.php` values to match your environment:
+Create a copy of the [EXAMPLE.settings.local.inc.php](includes/EXAMPLE.settings.local.inc.php) with the name of `settings.local.inc.php` in the [includes](includes/) directory, and set its values to match your environment (see [Local Settings Configuration Values](#local-settings-configuration-values)). For example, on a Linux system:
 
-- `DB_SERVER` should be set to the IP address or hostname of your database server. If this is on the same server that the codebase is in then typically this would be `127.0.0.1`.
-- `DB_USER` should be set to the user which you created for access to the database.
-- `DB_PASS` should be set the password for the user which you created.
-- `DB_NAME` should be set to `address_book`, if you used the default set up.
-- `SITE_URL` should be the FQDN of the address of the server.
+```bash
+cp includes/EXAMPLE.settings.local.inc.php includes/settings.local.inc.php
+```
+
+#### Database
+
+By default the database is `data/address-book.sqlite`, in the directory above [html](html/). Create the `data` directory and give the web server user permission to write to it. SQLite also creates temporary files next to the database, so the web server needs to be able to write to the directory and not just the file. For example, where the web server runs as `www-data`:
+
+```bash
+mkdir data
+chown www-data:www-data data
+```
+
+To keep the database elsewhere, set `DB_PATH`. Keep it outside of the [html](html/) directory, so that it can't be downloaded. Don't put it on a network share (such as NFS or SMB), as SQLite needs a local disk to work reliably.
 
 #### Web Server Configuration
 
-You should configure your web server so that the document root is set as the [html](html) directory. However, the web server user for your configuration should have access to both the [html](html/) and [includes](includes/) directories.
+You should configure your web server so that the document root is set as the [html](html) directory. However, the web server user for your configuration should have access to the [html](html/), [includes](includes/) and [sql](sql/) directories, and write access to the database directory.
 
 ### 3. TrueNAS SCALE
 
-The system can run as a custom app on TrueNAS SCALE 24.10 (Electric Eel) or later. It uses 2 prebuilt images, which GitHub Actions builds and publishes to the GitHub Container Registry (see [.github/workflows/docker-publish.yml](.github/workflows/docker-publish.yml)):
-
-- `ghcr.io/zaydons/address-book` - the system, running on Apache and PHP 8.5.
-- `ghcr.io/zaydons/address-book-db` - MySQL, which creates the database and tables the first time it starts.
+The system can run as a custom app on TrueNAS SCALE 24.10 (Electric Eel) or later. It uses a prebuilt image, `ghcr.io/zaydons/address-book`, which GitHub Actions builds and publishes to the GitHub Container Registry (see [.github/workflows/docker-publish.yml](.github/workflows/docker-publish.yml)). The image runs the system on Apache and PHP 8.5, with the SQLite database in its `/data` directory.
 
 No files need to be copied to TrueNAS. The system is configured with environment variables instead of a `settings.local.inc.php` file.
 
-#### Publishing the images (once)
+#### Publishing the image (once)
 
-1. Push to the `main` branch, or run the **Docker images** workflow from the **Actions** tab on GitHub. On a fork, you may need to enable GitHub Actions in the **Actions** tab first.
-2. On GitHub, open each of the 2 packages (from **Packages** on your profile) and check under **Package settings** that the visibility is **Public**, so that TrueNAS can download them. If you keep them private, add your GitHub username and a personal access token with the `read:packages` scope as a registry login in TrueNAS instead.
+1. Push to the `main` branch, or run the **Docker image** workflow from the **Actions** tab on GitHub. On a fork, you may need to enable GitHub Actions in the **Actions** tab first.
+2. On GitHub, open the `address-book` package (from **Packages** on your profile) and check under **Package settings** that the visibility is **Public**, so that TrueNAS can download it. If you keep it private, add your GitHub username and a personal access token with the `read:packages` scope as a registry login in TrueNAS instead.
 
 #### Installing the app
 
 1. In TrueNAS, go to **Apps**, then **Discover Apps**, open the menu (three dots) and choose **Install via YAML**.
 2. Give the app a name, such as `address-book`.
 3. Paste in the contents of [truenas/address-book.yaml](truenas/address-book.yaml), and before saving change:
-   - the database password on the `x-db-password` line (it is used by both containers),
    - `SITE_URL` to the address you will use, such as `http://192.168.1.10:8080/`,
    - `TIMEZONE` if you don't want UTC.
-4. Save. The first start takes a minute or so while the database is set up. The app waits for the database to be ready.
-5. Open `http://<your TrueNAS address>:8080/` and log in with the default credentials below. You will be asked to choose a new password.
+4. Save, then open `http://<your TrueNAS address>:8080/` and log in with the default credentials below. You will be asked to choose a new password.
 
 TrueNAS uses ports 80 and 443 for its own web interface, so the system uses port 8080. To use a different port, change the first number in `"8080:80"`, and in `SITE_URL`.
 
-The database is kept in a Docker volume by default. To keep it in a dataset instead, so that it is included in your snapshots and backups, see the comment on the `volumes` line in the YAML file.
+The database is kept in a Docker volume by default. To keep it in a dataset instead, so that it is included in your snapshots and backups, see the comment on the `volumes` line in the YAML file. The app gives itself permission to write to the dataset when it starts.
 
-To update to newer images, edit the app in TrueNAS and save it again, or use the app's option to pull the latest images. For more control over when updates happen, replace `latest` in both `image` lines with a version tag, such as `1.1.0`, once a version has been tagged.
+To update to a newer image, edit the app in TrueNAS and save it again, or use the app's option to pull the latest images. For more control over when updates happen, replace `latest` in the `image` line with a version tag, such as `1.1.0`, once a version has been tagged.
 
 For HTTPS, put the system behind a reverse proxy (see [Running Behind a Reverse Proxy](#running-behind-a-reverse-proxy)) and set `SITE_URL` to the `https://` address.
 
@@ -131,32 +93,45 @@ If the system is working correctly then you should be prompted with a login wind
 
 You will be asked to choose a new password the first time you log in. Users added by another user, or whose password is reset by another user, are also asked to choose a new password when they next log in.
 
-## Upgrading
+## Backups
 
-### To 1.1.0
-
-Version 1.1.0 changes the database structure. Existing installations must run the [sql/upgrades/1.1.0.sql](sql/upgrades/1.1.0.sql) file against their database before using the new version, for example:
+The database is a single file. To back it up while the system is running, use SQLite's backup command rather than copying the file, as a copy taken during a write may be incomplete. For example, in Docker or on TrueNAS (where the container is called `address-book-app-1`; see `docker ps` for the name):
 
 ```bash
-mysql -u root -p address_book < sql/upgrades/1.1.0.sql
+docker exec -u www-data address-book-app-1 php -r '$db = new PDO("sqlite:/data/address-book.sqlite"); $db->exec("VACUUM INTO \"/data/backup.sqlite\"");'
 ```
 
-This also asks the default `admin` account to choose a new password if it still has the default password.
+This writes a complete copy to `backup.sqlite` in the same directory. If the database is in a TrueNAS dataset, snapshots of the dataset are also a good way to keep backups.
 
-If you use Docker, `docker compose` now needs a `.env` file (see [Docker installation](#1-docker-recommended)). The `address_book` database user is only created automatically for a new database. For an existing database, create it yourself as the `root` user, using the same password as in `.env`:
+## Upgrading
 
-```sql
-CREATE USER 'address_book'@'%' IDENTIFIED BY 'your-db-pass';
-GRANT SELECT, INSERT, UPDATE, DELETE ON `address_book`.* TO 'address_book'@'%';
+### To 1.1.0 (from MySQL to SQLite)
+
+Version 1.1.0 stores its data in SQLite instead of MySQL/MariaDB. To keep your existing data, copy it into a new SQLite database with [tools/mysql-to-sqlite.php](tools/mysql-to-sqlite.php) before using the new version. It copies users (with their passwords), contacts, API tokens and logs, and asks the default `admin` account to choose a new password if it still has the default password. Your MySQL database isn't changed, so keep it until you have checked the new version.
+
+On a manual installation, with the MySQL server still running:
+
+```bash
+php tools/mysql-to-sqlite.php --host=127.0.0.1 --user=root --password=YOUR-PASSWORD --database=address_book --output=data/address-book.sqlite
+chown www-data:www-data data/address-book.sqlite
 ```
 
-Then change `DB_USER` and `DB_PASS` in your `settings.local.inc.php`.
+This needs the `pdo_mysql` PHP module, which you will already have if the system was using MySQL.
+
+With Docker, start the old MySQL container on its own, then run the tool from the new image on the same Docker network (the image includes `pdo_mysql` for this). For example, if the old `docker compose` project was in a directory called `address-book`, its network is `address-book_default` and its database container is `mysql`:
+
+```bash
+docker run --rm -u www-data --network address-book_default -v address-book_address-book-data:/data ghcr.io/zaydons/address-book:latest \
+  php /var/www/address-book/tools/mysql-to-sqlite.php --host=mysql --user=root --password=YOUR-PASSWORD --database=address_book --output=/data/address-book.sqlite
+```
+
+If accented characters (such as é) look wrong after copying, such as `Ã©` instead of `é`, your system was connecting to MySQL as Latin-1. Delete the new file and run the tool again with `--charset=latin1`.
 
 ## Local Settings Configuration Values
 
-There are several configuration values which can be set in the `includes/settings.local.inc.php` file. Each of them can also be set as an environment variable with the same name, which is how the [TrueNAS app](#3-truenas-scale) is configured. A value in `settings.local.inc.php` takes priority over an environment variable. Below lists settings with their appropriate values:
+There are several configuration values which can be set in the `includes/settings.local.inc.php` file. Each of them can also be set as an environment variable with the same name, which is how the [Docker](#1-docker-recommended) and [TrueNAS](#3-truenas-scale) installations are configured. A value in `settings.local.inc.php` takes priority over an environment variable. Below lists settings with their appropriate values:
 
-- `DB_SERVER`, `DB_USER`, `DB_PASS` and `DB_NAME` are the database connection details, as described in the installation steps above.
+- `DB_PATH` (optional) is the location of the SQLite database file. It defaults to `data/address-book.sqlite` in the directory above `html/`, or `/data/address-book.sqlite` in the Docker image.
 - `SITE_URL` is the address used to access the system.
 
 - `TIMEZONE` should be set to the timezone you require for the system. See the [PHP Manual](https://www.php.net/manual/en/timezones.php) for options. 

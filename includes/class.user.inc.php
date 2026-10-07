@@ -317,8 +317,7 @@
 				// Begin prepared statement to delete a single ID from the database
 				$sql = '
 					DELETE FROM users 
-					WHERE user_id = :user_id 
-					LIMIT 1
+					WHERE user_id = :user_id
 				';
 				$stmt = $this->db->prepare($sql);
 
@@ -364,9 +363,8 @@
 					}
 				}
 				
-				// Specify which user to update and limit to update only 1 record as a fail-safe
-				$sql .= "WHERE user_id = :user_id ";
-				$sql .= "LIMIT 1";
+				// Specify which user to update - the ID is unique, so only 1 record is updated
+				$sql .= " WHERE user_id = :user_id";
 				
 				// Begin a prepared statement using the previous $sql
 				$stmt = $this->db->prepare($sql);
