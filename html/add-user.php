@@ -33,10 +33,10 @@
 		if(!CSRF::check_token($_POST['csrf_token'] ?? null))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
 		
 		// Length of fields
-		$length_username 			= 		strlen($_POST["username"]);
-		$length_full_name 			= 		strlen($_POST["full_name"]);
-		$length_password 			= 		strlen($_POST["password"]);
-		$length_confirm_password 	= 		strlen($_POST["confirm_password"]);
+		$length_username 			= 		strlen($_POST["username"] ?? "");
+		$length_full_name 			= 		strlen($_POST["full_name"] ?? "");
+		$length_password 			= 		strlen($_POST["password"] ?? "");
+		$length_confirm_password 	= 		strlen($_POST["confirm_password"] ?? "");
 		
 		// Named fields musn't be longer than length in the database, if they are then populate the $errors array
 		if($length_username > 100) 		{ $errors[] = $validation["too_long"]["user"]["username"]; };

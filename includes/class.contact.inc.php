@@ -63,11 +63,11 @@
 					// Set the properties of the class as per the users details
 					$this->full_name = htmlentities($this->full_name($result));
 					$this->full_address = htmlentities($this->full_address($result));
-					$this->email = htmlentities($result['contact_email']);
+					$this->email = htmlentities($result['contact_email'] ?? '');
 					$this->date_of_birth = htmlentities($this->cosmetic_mysqldate($result["date_of_birth"]));
-					$this->number['home']['raw'] = htmlentities($result['contact_number_home']);
+					$this->number['home']['raw'] = htmlentities($result['contact_number_home'] ?? '');
 					$this->number['home']['formatted'] = htmlentities($this->format_phone_number($result['contact_number_home']));
-					$this->number['mobile']['raw'] = htmlentities($result['contact_number_mobile']);
+					$this->number['mobile']['raw'] = htmlentities($result['contact_number_mobile'] ?? '');
 					$this->number['mobile']['formatted'] = htmlentities($this->format_phone_number($result['contact_number_mobile']));
 					
 					// Return all of the details of the contact
@@ -304,7 +304,7 @@
 		
 		public function remove_white_space($string) {
 			// Remove all white space within the string
-			return preg_replace('/\s+/', '', $string);
+			return preg_replace('/\s+/', '', $string ?? '');
 		}
 		
 		public function full_name(array $contact){

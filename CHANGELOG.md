@@ -19,6 +19,8 @@ Security fixes. Existing installations must run [sql/upgrades/1.1.0.sql](sql/upg
 - Pages send `X-Frame-Options`, `Content-Security-Policy: frame-ancestors 'none'`, `X-Content-Type-Options` and `Referrer-Policy` headers.
 - Docker: the system connects to MySQL as an `address_book` user with only `SELECT`, `INSERT`, `UPDATE` and `DELETE` access, instead of `root`. The password is set in a `.env` file.
 - Docker: Nginx is pinned to the `1.30` stable release instead of `latest`.
+- Docker: PHP updated to version `8.5`.
+- Fixed PHP 8.1+ deprecation notices when viewing, updating or deleting a contact without an email address or phone number, and when a form is submitted with fields missing.
 - Documented running behind a reverse proxy.
 - Fixed site functions and messages being loaded after the session and user checks, which caused an error when a logged in user was logged out for a failed security check.
 

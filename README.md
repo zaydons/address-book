@@ -56,7 +56,7 @@ If you wish to set up the system manually then this too can be done.
 
 - A web server with PHP (8+ recommended).
 - A relational database management system (RDBMS), such as MySQL or MariaDB.
-- The `mysql` and `pdo` PHP modules should be installed and enabled for your version of PHP. For example if you are using PHP8.4 then you would need to install `php8.4-mysql`.
+- The `mysql` and `pdo` PHP modules should be installed and enabled for your version of PHP. For example if you are using PHP 8.5 then you would need to install `php8.5-mysql`.
 
 #### Database Configuration
 

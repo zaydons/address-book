@@ -59,17 +59,17 @@
 				if(!CSRF::check_token($_POST['csrf_token'] ?? null))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
 				
 				// Length of fields
-				$length_first_name = 		strlen($_POST["first_name"]);
-				$length_middle_name = 		strlen($_POST["middle_name"]);
-				$length_last_name = 		strlen($_POST["last_name"]);
-				$length_home_number = 		strlen($_POST["contact_number_home"]);
-				$length_mobile_number = 	strlen($_POST["contact_number_mobile"]);
-				$length_contact_email = 	strlen($_POST["contact_email"]);
-				$length_address_line_1 =	strlen($_POST["address_line_1"]);
-				$length_address_line_2 = 	strlen($_POST["address_line_2"]);
-				$length_address_town = 		strlen($_POST["address_town"]);
-				$length_address_county = 	strlen($_POST["address_county"]);
-				$length_address_post_code = strlen($_POST["address_post_code"]);
+				$length_first_name = 		strlen($_POST["first_name"] ?? "");
+				$length_middle_name = 		strlen($_POST["middle_name"] ?? "");
+				$length_last_name = 		strlen($_POST["last_name"] ?? "");
+				$length_home_number = 		strlen($_POST["contact_number_home"] ?? "");
+				$length_mobile_number = 	strlen($_POST["contact_number_mobile"] ?? "");
+				$length_contact_email = 	strlen($_POST["contact_email"] ?? "");
+				$length_address_line_1 =	strlen($_POST["address_line_1"] ?? "");
+				$length_address_line_2 = 	strlen($_POST["address_line_2"] ?? "");
+				$length_address_town = 		strlen($_POST["address_town"] ?? "");
+				$length_address_county = 	strlen($_POST["address_county"] ?? "");
+				$length_address_post_code = strlen($_POST["address_post_code"] ?? "");
 				
 				// Name fields musn't be longer than length in the database, if they are then populate the $errors array
 				if($length_first_name > 50) 		{ $errors[] = $validation["too_long"]["contact"]["first_name"]; }; 
