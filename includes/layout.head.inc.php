@@ -3,6 +3,9 @@
 	<head>
 		<title><?php echo page_name(); ?></title>
 		
+		<!-- Light/dark theme, applied before anything else so that the page isn't shown in the wrong theme first -->
+		<script src="js/theme.js"></script>
+		
 		<!-- jQuery -->
 		<script src="assets/jQuery/3.5.0/jquery.min.js"></script>
 <?php

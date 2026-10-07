@@ -128,6 +128,10 @@ There are several configuration values which can be set in the `includes/setting
 - `LOGIN_MAX_FAILED_IP` (optional, default `20`) is the number of failed logins allowed from one IP address within the lockout window.
 - `LOGIN_LOCKOUT_MINUTES` (optional, default `15`) is the length of the lockout window in minutes.
 
+## Dark Theme
+
+The system follows the light or dark setting of the user's device. The theme button in the navigation bar switches between **Auto** (follow the device), **Dark** and **Light**. The choice is remembered in that browser.
+
 ## Running Behind a Reverse Proxy
 
 The system uses the client's IP address (`REMOTE_ADDR`) to check that a logged in session hasn't moved to another device, to limit failed logins, to check API tokens which are restricted to an IP address, and in the logs. If the system is behind a reverse proxy or load balancer, `REMOTE_ADDR` will be the proxy's address unless the web server is configured to replace it with the real client address. Without that:
