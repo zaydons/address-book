@@ -1,31 +1,16 @@
 <?php
 	/**
-	 * The IP/hostname of the MySQL/MariaDB server.
-	 * If you are using a Docker environment then this should be the name of your Docker MySQL/MariaDB container.
-	 * Otherwise this should be the address of your database server, typically this is 127.0.0.1.
+	 * Each of these settings can also be set as an environment variable with the same name, such as when running in a container.
+	 * A value set in this file takes priority over an environment variable.
 	 */
-	defined('DB_SERVER')    	?	null	:	define('DB_SERVER', 'mysql'); // Docker example
-	// defined('DB_SERVER')    	?	null	:	define('DB_SERVER', '127.0.0.1'); // Standalone database example
 
 	/**
-	 * The username of the account which has access to the database on the MySQL/MariaDB server.
+	 * The SQLite database file where the data is stored. It is created, with the default admin user, if it doesn't exist.
+	 * The web server needs permission to write to the directory which contains it.
+	 * Keep it outside of the html/ directory so that it can't be downloaded. Leave this commented out to use the default,
+	 * which is data/address-book.sqlite in the directory above html/.
 	 */
-	defined('DB_USER')			?	null	:	define('DB_USER', 'root');
-
-	/**
-	 * The password (if any) associated with the DB_USER account.
-	 * If you are using Docker then a password will likely be set during setup. 
-	 * You should consult the logs for the 'mysql' container which will list the password generated.
-	 * mysql-1    | 2025-03-27 08:52:31+00:00 [Note] [Entrypoint]: GENERATED ROOT PASSWORD: iNBqruolQSo6ZEsc8ZXyQ5QpUWke9KF5
-	 */
-	defined('DB_PASS')			?	null	:	define('DB_PASS', '');
-
-	/**
-	 * The database where the data will be stored.
-	 * If you have used the default installation with the sql.sql file and didn't change any settings then this will be 'address_book'.
-	 * Please note that the user set for DB_USER will need to have permission to this database.
-	 */
-	defined('DB_NAME')			?	null	:	define('DB_NAME', 'address_book');
+	// defined('DB_PATH')			?	null	:	define('DB_PATH', '/var/lib/address-book/address-book.sqlite');
 
 	/**
 	 * The address which is used to access this system.

@@ -32,7 +32,7 @@
 				$errors = array();
 
 				// Check that the submitted CSRF token is the same as the one in the $_SESSION to prevent cross site request forgery
-				if(!CSRF::check_token($_POST['csrf_token']))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
+				if(!CSRF::check_token($_POST['csrf_token'] ?? null))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
 				
 				// If no errors have been found during the field validations
 				if(empty($errors)) {
@@ -110,24 +110,24 @@
 			<!-- CONTENT -->
 			<?php $session->output_message(); ?>
 			
-			<form class="form-horizontal" action="" method="post">
+			<form action="" method="post">
 
-				<div class="form-group">
-					<label class="col-sm-2 control-label">API Token</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">API Token</label>
 					<div class="col-sm-10">
 						<input type="text" class="form-control" value="<?php echo htmlentities($api->token); ?>" disabled>
 					</div>
 				</div>
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Cosmetic Name*</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Cosmetic Name*</label>
 					<div class="col-sm-10">
 						<input type="text" class="form-control" name="cosmetic_name" placeholder="Give the API token a cosmetic name to allow you to easily identify it (Optional)" <?php if(isset($_POST["cosmetic_name"])){ echo "value=\"" . htmlentities($_POST["cosmetic_name"]) . "\""; } elseif(isset($api->name) && !empty($api->name)) { echo "value=\"" . htmlentities($api->name) . "\""; }; ?>>
 					</div>
 				</div>
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">IP Address**</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">IP Address**</label>
 					<div class="col-sm-10">
 						<input type="text" class="form-control" name="ip_address" value="<?php if(isset($api->ip) && !empty($api->ip)) { echo htmlentities($api->ip); } else { echo "Accessible from any IP"; } ?>" disabled>
 						<small>You are unable to update the IP address associated with the API token. To allow access from another IP address you need to <a href="<?php echo PAGELINK_APIADD; ?>">create a new API token</a>.</small>
@@ -142,9 +142,9 @@
 				<p>** = If no IP address is specified, then the API token will be able to be used from any IP address. You are unable to update the IP address once an API token has been created. For security purposes you will need to create a new API token if you wish to use a different IP address.</p>
 				
 
-				<div class="form-group">
-					<div class="col-sm-offset-2 col-sm-10">
-						<button type="submit" name="submit" value="submit" class="btn btn-default">Submit</button>
+				<div class="row gy-2 mb-3">
+					<div class="offset-sm-2 col-sm-10">
+						<button type="submit" name="submit" value="submit" class="btn btn-primary">Submit</button>
 					</div>
 				</div
 			</form>

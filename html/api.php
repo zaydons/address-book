@@ -5,10 +5,14 @@
 	// Set $page_name so that the title of each page is correct
 	$page_name = PAGENAME_API;
 	
-	// Check if user is making an API call - check if GET value has been sent
-	if(isset($_GET['t']) && !empty($_GET['t'])) {
+	// Check if user is making an API call - check if a token has been sent in the Authorization header or the GET value
+	$api_token = API::request_token();
+	if($api_token) {
 		// User is making an API call
-		$api = new API($_GET['t'], $_GET['m'], $_GET['q']);
+		// Only accept text values for the method and query, as anything else (such as an array) isn't a valid API call
+		$api_method = isset($_GET['m']) && is_string($_GET['m']) ? $_GET['m'] : null;
+		$api_query = isset($_GET['q']) && is_string($_GET['q']) ? $_GET['q'] : null;
+		$api = new API($api_token, $api_method, $api_query);
 
 		// Output the array_result in JSON format
 		header("Content-Type: application/json");
@@ -47,14 +51,15 @@
 			<!-- CONTENT -->
 			<?php $session->output_message(); ?>
 			
-			<p>API calls are made using a HTTP GET request to this page, using the values:
+			<p>API calls are made using a HTTP GET request to this page, sending the API token in an <strong>Authorization</strong> header and using the values:
 			<ul>
-				<li><strong>t</strong> for the API token</li>
 				<li><strong>m</strong> for the API method</li>
 				<li><strong>q</strong> for the API query string</li>
 			</ul>
 			
-			<p>For example, <?php echo htmlentities(site_url()); ?>/<?php echo PAGELINK_API; ?>?t=<strong>APITOKEN</strong>&m=<strong>APIMETHOD</strong>&q=<strong>APIQUERY</strong></p>
+			<p>For example, <code>curl -H "Authorization: Bearer <strong>APITOKEN</strong>" "<?php echo htmlentities(site_url()); ?>/<?php echo PAGELINK_API; ?>?m=<strong>APIMETHOD</strong>&amp;q=<strong>APIQUERY</strong>"</code></p>
+			
+			<p>For older integrations the token can still be sent as a <strong>t</strong> value instead, such as <?php echo htmlentities(site_url()); ?>/<?php echo PAGELINK_API; ?>?t=<strong>APITOKEN</strong>&amp;m=<strong>APIMETHOD</strong>&amp;q=<strong>APIQUERY</strong>, however this is not recommended as the token will be recorded in web server and proxy logs.</p>
 			
 			<p>Results are returned in a JSON array.</p>
 			<ul>
@@ -76,7 +81,7 @@
 			
 			<hr />
 			
-			<table id="<?php echo $datatables_table_id; ?>">
+			<table id="<?php echo $datatables_table_id; ?>" class="table table-striped table-hover" style="width: 100%">
 				<thead>
 					<tr>
 						<th>API Token</th>
@@ -102,7 +107,7 @@
 					?>
 				</tbody>
 			</table>
-			<a href="<?php echo PAGELINK_APIADD; ?>" type="button" class="btn btn-info">Add API Token</a>
+			<a href="<?php echo PAGELINK_APIADD; ?>" type="button" class="btn btn-primary">Add API Token</a>
 			<!-- /CONTENT -->
 
 <?php

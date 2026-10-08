@@ -1,52 +1,26 @@
 # Address Book
 
-Address Book is a simple PHP-based contact list manager with authentication, logging features and an API to allow integration with other services. Built using the [Bootstrap](https://getbootstrap.com/) framework, [DataTables](https://datatables.net/), [jQuery](https://jquery.com/) and [FontAwesome](https://fontawesome.com/) to maintain a user-friendly functionality.
+Address Book is a simple PHP-based contact list manager with authentication, logging features and an API to allow integration with other services. Built using the [Bootstrap](https://getbootstrap.com/) 5 framework, [DataTables](https://datatables.net/) and [FontAwesome](https://fontawesome.com/) to maintain a user-friendly functionality.
 
 ## Installation
 
-There are 2 methods to installation. Regardless of which method you choose you should first complete some prerequisites.
+The system stores its data in a single [SQLite](https://sqlite.org/) database file, so no separate database server is needed. The file and its tables are created automatically the first time the system is used.
 
-Create a copy of the [EXAMPLE.settings.local.inc.php](includes/EXAMPLE.settings.local.inc.php) with the name of `settings.local.inc.php`. This file should exist in the [includes](includes/) directory. In this file are a number of different values which can be set based on your environment.
-
-For example, on a Linux system:
-
-```bash
-cp includes/EXAMPLE.settings.local.inc.php includes/settings.local.inc.php
-```
+There are 3 methods to installation: Docker, manual installation on a web server with PHP, or as a custom app on TrueNAS SCALE.
 
 ### 1. Docker (Recommended)
 
 Docker is the recommended method to set up this system due to it's ease of getting things configured quickly and also it is far less likely to be a victim of issues which may occur due to OS or versions of software. The below assumes that you have `docker` and `docker compose` installed on your system.
 
-1. First you should build the environment. This will download any images and set up the custom images which are required to run in the next step.
+1. Build and start the system:
 
 ```bash
-docker compose build
+docker compose up --build
 ```
 
-2. Once the `build` has completed successfully you can then start the environment with the `up` command.
+2. Visit http://localhost/ and log in (see [Testing](#testing)).
 
-```bash
-docker compose up
-```
-
-This may do some additional downloading which wasn't done during the `build` stage. This is normal.
-
-3. The first time you run the `up` command the database will be initialised and the `root` user will have a randomly generated password set. You should check through the console logs where there will be a message which indicates what the password has been set to.
-
-```console
-mysql-1    | 2025-03-27 08:52:31+00:00 [Note] [Entrypoint]: GENERATED ROOT PASSWORD: iNBqruolQSo6ZEsc8ZXyQ5QpUWke9KF5
-```
-
-You should take this randomly generated password and populate it in the `DB_PASS` of your `settings.local.inc.php`.
-
-4. The remaining values in your `settings.local.inc.php` should then also be set to meet the Docker environment which you are using:
-
-- `DB_SERVER` should be set to `mysql`.
-- `DB_USER` should be set to `root`.
-- `DB_PASS` should be set the password as detailed above.
-- `DB_NAME` should be set to `address_book`.
-- `SITE_URL` should be set to the address from which the system will be accessible from. Typically http://localhost/ is acceptable.
+[docker-compose.yml](docker-compose.yml) builds the same image as the [TrueNAS app](#3-truenas-scale), with the code mounted from this directory so that changes are seen straight away. The database is kept in the `address-book-data` Docker volume. Settings are set as environment variables in `docker-compose.yml`, or in an `includes/settings.local.inc.php` file (see [Local Settings Configuration Values](#local-settings-configuration-values)).
 
 ### 2. Manual Installation
 
@@ -55,32 +29,58 @@ If you wish to set up the system manually then this too can be done.
 #### Requirements
 
 - A web server with PHP (8+ recommended).
-- A relational database management system (RDBMS), such as MySQL or MariaDB.
-- The `mysql` and `pdo` PHP modules should be installed and enabled for your version of PHP. For example if you are using PHP8.4 then you would need to install `php8.4-mysql`.
-
-#### Database Configuration
-
-You should create a database called `address_book` along with a user which has permissions to this newly created database.
-
-You should then import the [sql/sql.sql](sql/sql.sql) file into your database to set the system up to a baseline. For example:
-
-```bash
-mysql -u <username> (-p if your user account has a password) address_book < /location/to/sql/sql.sql
-```
+- The `pdo_sqlite` PHP module, which is included with most PHP installations. For example on Debian or Ubuntu with PHP 8.5, install `php8.5-sqlite3`.
 
 #### Settings Configuration
 
-You should then set your `settings.local.inc.php` values to match your environment:
+Create a copy of the [EXAMPLE.settings.local.inc.php](includes/EXAMPLE.settings.local.inc.php) with the name of `settings.local.inc.php` in the [includes](includes/) directory, and set its values to match your environment (see [Local Settings Configuration Values](#local-settings-configuration-values)). For example, on a Linux system:
 
-- `DB_SERVER` should be set to the IP address or hostname of your database server. If this is on the same server that the codebase is in then typically this would be `127.0.0.1`.
-- `DB_USER` should be set to the user which you created for access to the database.
-- `DB_PASS` should be set the password for the user which you created.
-- `DB_NAME` should be set to `address_book`, if you used the default set up.
-- `SITE_URL` should be the FQDN of the address of the server.
+```bash
+cp includes/EXAMPLE.settings.local.inc.php includes/settings.local.inc.php
+```
+
+#### Database
+
+By default the database is `data/address-book.sqlite`, in the directory above [html](html/). Create the `data` directory and give the web server user permission to write to it. SQLite also creates temporary files next to the database, so the web server needs to be able to write to the directory and not just the file. For example, where the web server runs as `www-data`:
+
+```bash
+mkdir data
+chown www-data:www-data data
+```
+
+To keep the database elsewhere, set `DB_PATH`. Keep it outside of the [html](html/) directory, so that it can't be downloaded. Don't put it on a network share (such as NFS or SMB), as SQLite needs a local disk to work reliably.
 
 #### Web Server Configuration
 
-You should configure your web server so that the document root is set as the [html](html) directory. However, the web server user for your configuration should have access to both the [html](html/) and [includes](includes/) directories.
+You should configure your web server so that the document root is set as the [html](html) directory. However, the web server user for your configuration should have access to the [html](html/), [includes](includes/) and [sql](sql/) directories, and write access to the database directory.
+
+### 3. TrueNAS SCALE
+
+The system can run as a custom app on TrueNAS SCALE 24.10 (Electric Eel) or later. It uses a prebuilt image, `ghcr.io/zaydons/address-book`, which GitHub Actions builds and publishes to the GitHub Container Registry (see [.github/workflows/docker-publish.yml](.github/workflows/docker-publish.yml)). The image runs the system on Apache and PHP 8.5, with the SQLite database in its `/data` directory.
+
+No files need to be copied to TrueNAS. The system is configured with environment variables instead of a `settings.local.inc.php` file.
+
+#### Publishing the image (once)
+
+1. Push to the `main` branch, or run the **Docker image** workflow from the **Actions** tab on GitHub. On a fork, you may need to enable GitHub Actions in the **Actions** tab first.
+2. On GitHub, open the `address-book` package (from **Packages** on your profile) and check under **Package settings** that the visibility is **Public**, so that TrueNAS can download it. If you keep it private, add your GitHub username and a personal access token with the `read:packages` scope as a registry login in TrueNAS instead.
+
+#### Installing the app
+
+1. In TrueNAS, go to **Apps**, then **Discover Apps**, open the menu (three dots) and choose **Install via YAML**.
+2. Give the app a name, such as `address-book`.
+3. Paste in the contents of [truenas/address-book.yaml](truenas/address-book.yaml), and before saving change:
+   - `SITE_URL` to the address you will use, such as `http://192.168.1.10:8080/`,
+   - `TIMEZONE` if you don't want UTC.
+4. Save, then open `http://<your TrueNAS address>:8080/` and log in with the default credentials below. You will be asked to choose a new password.
+
+TrueNAS uses ports 80 and 443 for its own web interface, so the system uses port 8080. To use a different port, change the first number in `"8080:80"`, and in `SITE_URL`.
+
+The database is kept in a Docker volume by default. To keep it in a dataset instead, so that it is included in your snapshots and backups, see the comment on the `volumes` line in the YAML file. The app gives itself permission to write to the dataset when it starts.
+
+To update to a newer image, edit the app in TrueNAS and save it again, or use the app's option to pull the latest images. For more control over when updates happen, replace `latest` in the `image` line with a version tag, such as `1.1.0`, once a version has been tagged.
+
+For HTTPS, put the system behind a reverse proxy (see [Running Behind a Reverse Proxy](#running-behind-a-reverse-proxy)) and set `SITE_URL` to the `https://` address.
 
 ### Testing
 
@@ -91,11 +91,80 @@ If the system is working correctly then you should be prompted with a login wind
 - Username: `admin`
 - Password: `LetMeIn123`
 
+You will be asked to choose a new password the first time you log in. Users added by another user, or whose password is reset by another user, are also asked to choose a new password when they next log in.
+
+## Backups
+
+The database is a single file. To back it up while the system is running, use SQLite's backup command rather than copying the file, as a copy taken during a write may be incomplete. For example, in Docker or on TrueNAS (where the container is called `address-book-app-1`; see `docker ps` for the name):
+
+```bash
+docker exec -u www-data address-book-app-1 php -r '$db = new PDO("sqlite:/data/address-book.sqlite"); $db->exec("VACUUM INTO \"/data/backup.sqlite\"");'
+```
+
+This writes a complete copy to `backup.sqlite` in the same directory. If the database is in a TrueNAS dataset, snapshots of the dataset are also a good way to keep backups.
+
+## Upgrading
+
+### To 1.1.0 (from MySQL to SQLite)
+
+Version 1.1.0 stores its data in SQLite instead of MySQL/MariaDB. To keep your existing data, copy it into a new SQLite database with [tools/mysql-to-sqlite.php](tools/mysql-to-sqlite.php) before using the new version. It copies users (with their passwords), contacts, API tokens and logs, and asks the default `admin` account to choose a new password if it still has the default password. Your MySQL database isn't changed, so keep it until you have checked the new version.
+
+On a manual installation, with the MySQL server still running:
+
+```bash
+php tools/mysql-to-sqlite.php --host=127.0.0.1 --user=root --password=YOUR-PASSWORD --database=address_book --output=data/address-book.sqlite
+chown www-data:www-data data/address-book.sqlite
+```
+
+This needs the `pdo_mysql` PHP module, which you will already have if the system was using MySQL.
+
+With Docker, start the old MySQL container on its own, then run the tool from the new image on the same Docker network (the image includes `pdo_mysql` for this). For example, if the old `docker compose` project was in a directory called `address-book`, its network is `address-book_default` and its database container is `mysql`:
+
+```bash
+docker run --rm -u www-data --network address-book_default -v address-book_address-book-data:/data ghcr.io/zaydons/address-book:latest \
+  php /var/www/address-book/tools/mysql-to-sqlite.php --host=mysql --user=root --password=YOUR-PASSWORD --database=address_book --output=/data/address-book.sqlite
+```
+
+If accented characters (such as é) look wrong after copying, such as `Ã©` instead of `é`, your system was connecting to MySQL as Latin-1. Delete the new file and run the tool again with `--charset=latin1`.
+
 ## Local Settings Configuration Values
 
-There are several configuration values which can be set in the `includes/settings.local.inc.php` file. Below lists settings with their appropriate values:
+There are several configuration values which can be set in the `includes/settings.local.inc.php` file. Each of them can also be set as an environment variable with the same name, which is how the [Docker](#1-docker-recommended) and [TrueNAS](#3-truenas-scale) installations are configured. A value in `settings.local.inc.php` takes priority over an environment variable. Below lists settings with their appropriate values:
+
+- `DB_PATH` (optional) is the location of the SQLite database file. It defaults to `data/address-book.sqlite` in the directory above `html/`, or `/data/address-book.sqlite` in the Docker image.
+- `SITE_URL` is the address used to access the system.
 
 - `TIMEZONE` should be set to the timezone you require for the system. See the [PHP Manual](https://www.php.net/manual/en/timezones.php) for options. 
+- `LOGIN_MAX_FAILED_USERNAME` (optional, default `5`) is the number of failed logins allowed for one username within the lockout window. Further attempts for that username are blocked until the window has passed.
+- `LOGIN_MAX_FAILED_IP` (optional, default `20`) is the number of failed logins allowed from one IP address within the lockout window.
+- `LOGIN_LOCKOUT_MINUTES` (optional, default `15`) is the length of the lockout window in minutes.
+
+## Dark Theme
+
+The system follows the light or dark setting of the user's device. The theme button in the navigation bar switches between **Auto** (follow the device), **Dark** and **Light**. The choice is remembered in that browser.
+
+## Running Behind a Reverse Proxy
+
+The system uses the client's IP address (`REMOTE_ADDR`) to check that a logged in session hasn't moved to another device, to limit failed logins, to check API tokens which are restricted to an IP address, and in the logs. If the system is behind a reverse proxy or load balancer, `REMOTE_ADDR` will be the proxy's address unless the web server is configured to replace it with the real client address. Without that:
+
+- All users will appear to come from the same IP address, so failed logins from anyone count towards the same IP address limit.
+- API tokens restricted to an IP address will only work if restricted to the proxy's address.
+
+Configure your web server to take the client address from the proxy, but only trust the header from your proxy's address. For example, with Nginx's [realip module](https://nginx.org/en/docs/http/ngx_http_realip_module.html):
+
+```nginx
+set_real_ip_from 10.0.0.0/8;  # your proxy's address
+real_ip_header X-Forwarded-For;
+```
+
+or with Apache's [mod_remoteip](https://httpd.apache.org/docs/current/mod/mod_remoteip.html):
+
+```apache
+RemoteIPHeader X-Forwarded-For
+RemoteIPInternalProxy 10.0.0.0/8
+```
+
+If the proxy handles HTTPS, set `SITE_URL` to the `https://` address so that the session cookie is only sent over HTTPS.
 
 ## Screenshots
 
@@ -103,13 +172,18 @@ Screenshots of the system can be found in the [screenshots](screenshots/) direct
 
 ## API
 
-The API built in the system is accessed using a HTTP GET request to the [api.php](html/api.php) page. The request requires 3 values:
+The API built in the system is accessed using a HTTP GET request to the [api.php](html/api.php) page. The API token is sent in an `Authorization` header, and the request requires 2 values:
 
-- `t` for the API token.
 - `m` for the API method.
 - `q` for the API query string - note that the query must contain no whitespace (including encoded whitespace characters).
 
-For example, `http://localhost/api.php?t=APITOKEN&m=APIMETHOD&q=APIQUERY`.
+For example:
+
+```bash
+curl -H "Authorization: Bearer APITOKEN" "http://localhost/api.php?m=APIMETHOD&q=APIQUERY"
+```
+
+For older integrations the token can still be sent as a `t` value instead, such as `http://localhost/api.php?t=APITOKEN&m=APIMETHOD&q=APIQUERY`. This isn't recommended, as web servers and proxies record URLs in their logs. The system's own logs only record the first 4 characters of a token.
 
 API tokens are created on the same [api.php](html/api.php) page.
 
@@ -170,7 +244,7 @@ If an API token has no authorised IP address associated with it, then this means
 API methods are used in the `m` value in the HTTP GET request. The following methods are valid.
 
 - `findNumber` - Obtain the first contact found based on a queried phone number (mobile and home). Note that if more than one contact exists with the same phone number then this will only return the first result, based on the last name of the contacts in alphabetical order.
-  - Example: a query of `api.php?t=APITOKEN&m=findNumber&q=0987654321` will return the result (if it exists) for the phone number `0987654321`.
+  - Example: a query of `api.php?m=findNumber&q=0987654321` (with the token in the `Authorization` header) will return the result (if it exists) for the phone number `0987654321`.
 
 ## License
 

@@ -1,2 +1,5 @@
 includes/settings.local.inc.php
 .DS_Store
+
+# SQLite database
+data/

@@ -2,10 +2,27 @@
 	class Session {
 		// Constructor
 		public function __construct() {
+			// Only accept session IDs which were issued by this server, and only from cookies (never the URL)
+			ini_set('session.use_strict_mode', '1');
+			ini_set('session.use_only_cookies', '1');
+			// Harden the session cookie
+			session_set_cookie_params(array(
+				'lifetime' => 0, // Expire when the browser is closed
+				'path' => '/',
+				'secure' => $this->is_https(), // Only send the cookie over HTTPS when the site is served over HTTPS
+				'httponly' => true, // Stop JavaScript reading the cookie
+				'samesite' => 'Lax' // Stop the cookie being sent with requests made by other sites
+			));
 			// Start the session
 			session_start();
 			// Log the users details
 			$this->obtain_user_details();
+		}
+		
+		// Used to check if the site is being accessed over HTTPS
+		private function is_https() {
+			// Either the web server reports HTTPS, or the configured SITE_URL is HTTPS (such as when behind a reverse proxy which handles HTTPS)
+			return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || stripos(SITE_URL, 'https://') === 0;
 		}
 		
 		// Used for testing purposes to output the contents of the $_SESSION array
@@ -116,7 +133,7 @@
 			// Check if the users HTTP agent has been logged
 			if(!$this->get('user_agent')) {
 				// Log the users HTTP agent
-				$this->set('user_agent', $_SERVER['HTTP_USER_AGENT']);
+				$this->set('user_agent', $_SERVER['HTTP_USER_AGENT'] ?? '');
 			}
 		}
 		

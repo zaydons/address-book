@@ -1,6 +1,21 @@
 	.pt-15 {
 		padding-top: 15px;
 	}
-	.pt-50 {
-		padding-top: 50px;
+	
+	/* Theme button - only show the label for the current choice, and hide the button if JavaScript isn't running */
+	.navbar-theme span {
+		display: none;
+	}
+	html[data-theme-choice="auto"] .navbar-theme .theme-auto,
+	html[data-theme-choice="dark"] .navbar-theme .theme-dark,
+	html[data-theme-choice="light"] .navbar-theme .theme-light {
+		display: inline;
+	}
+	html:not([data-theme-choice]) .navbar-theme {
+		display: none;
+	}
+	
+	/* On small screens, scroll wide tables sideways within their own area instead of making the whole page wider */
+	.dt-layout-table > .dt-layout-full {
+		overflow-x: auto;
 	}

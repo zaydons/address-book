@@ -18,7 +18,7 @@
 				$result = null, // The result of the API call, if any
 				$result_message = null, // The result of the API call, if any
 				$available_methods = array( // The different types of methods available, with their descriptions
-					'findNumber' => 'Obtain the first contact found based on a queried phone number. Note that if more than one contact has the same phone number this will only return the first, based on last name in alphabetical order. Example, ' . PAGELINK_API . '?t=APITOKEN&m=findNumber&q=0987654321 will return the result (if it exists) for the phone number 0987654321.'
+					'findNumber' => 'Obtain the first contact found based on a queried phone number. Note that if more than one contact has the same phone number this will only return the first, based on last name in alphabetical order. Example, ' . PAGELINK_API . '?m=findNumber&q=0987654321 will return the result (if it exists) for the phone number 0987654321.'
 				),
 				$array_result = null, // Used to build a JSON format to return a result
 				$http_response = 200; // The HTTP status code returned to the client
@@ -61,7 +61,7 @@
 							$this->http_response = 200;
 							
 							// Create new Log instance, and log the action to the database
-							$log = new Log('api_call_success', 'Token (' . $token . ') called Method (' . $method . ') with Query (' . $query . ')');
+							$log = new Log('api_call_success', 'Token (' . self::mask_token($token) . ') called Method (' . $method . ') with Query (' . $query . ')');
 						} else {
 							// No result could be found
 							$this->result = 'no_result';
@@ -69,7 +69,7 @@
 							$this->http_response = 404;
 							
 							// Create new Log instance, and log the action to the database
-							$log = new Log('api_call_failed', 'Token (' . $token . ') called Method (' . $method . ') with Query (' . $query . ') - No Result');
+							$log = new Log('api_call_failed', 'Token (' . self::mask_token($token) . ') called Method (' . $method . ') with Query (' . $query . ') - No Result');
 						}
 					} else {
 						// $method is not valid
@@ -78,7 +78,7 @@
 						$this->http_response = 400;
 						
 						// Create new Log instance, and log the action to the database
-						$log = new Log('api_call_failed', 'Token (' . $token . ') called Method (' . $method . ') with Query (' . $query . ') - Invalid Method');
+						$log = new Log('api_call_failed', 'Token (' . self::mask_token($token) . ') called Method (' . $method . ') with Query (' . $query . ') - Invalid Method');
 					}
 				} else {
 					// $token is not valid
@@ -87,7 +87,7 @@
 					$this->http_response = 401;
 					
 					// Create new Log instance, and log the action to the database
-					$log = new Log('api_call_failed', 'Token (' . $token . ') called Method (' . $method . ') with Query (' . $query . ') - Invalid Token');
+					$log = new Log('api_call_failed', 'Token (' . self::mask_token($token) . ') called Method (' . $method . ') with Query (' . $query . ') - Invalid Token');
 				}
 			} else {
 				// Not set, return incomplete API call
@@ -107,6 +107,36 @@
 				'result' => $this->result,
 				'result_message' => $this->result_message
 			);
+		}
+		
+		// Method to obtain the API token sent with a request
+		// The token should be sent in an "Authorization: Bearer" header, the "t" GET value is still accepted for older integrations
+		public static function request_token() {
+			// Look for the Authorization header, which some web servers pass through under a different name
+			$header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null;
+			if(!$header && function_exists('getallheaders')) {
+				// Some Apache configurations only make the header available through getallheaders()
+				$headers = array_change_key_case(getallheaders(), CASE_LOWER);
+				$header = $headers['authorization'] ?? null;
+			}
+			
+			// Check the header contains a bearer token
+			if($header && preg_match('/^Bearer\s+(\S+)$/i', trim($header), $matches)) {
+				return $matches[1];
+			}
+			
+			// Fall back to the "t" GET value
+			if(isset($_GET['t']) && is_string($_GET['t']) && $_GET['t'] !== '') {
+				return $_GET['t'];
+			}
+			
+			// No token was sent
+			return null;
+		}
+		
+		// Method to shorten a token so that it can be identified in the logs without the full token being recorded
+		public static function mask_token($token) {
+			return substr($token, 0, 4) . '...';
 		}
 		
 		// Method to check if a token is valid or not
@@ -227,8 +257,7 @@
 				// Begin prepared statement to delete a single ID from the database
 				$sql = '
 					DELETE FROM api 
-					WHERE api_id = :api_id 
-					LIMIT 1
+					WHERE api_id = :api_id
 				';
 				$stmt = $this->db->prepare($sql);
 
@@ -276,9 +305,8 @@
 						}
 					}
 					
-					// Specify which API token to update and limit to update only 1 record as a fail-safe
-					$sql .= "WHERE api_id = :api_id ";
-					$sql .= "LIMIT 1";
+					// Specify which API token to update - the ID is unique, so only 1 record is updated
+					$sql .= " WHERE api_id = :api_id";
 					
 					// Begin a prepared statement using the previous $sql
 					$stmt = $this->db->prepare($sql);
@@ -313,22 +341,8 @@
 		
 		// Method to generate a new API token
 		public function generate_token($token_length) {
-			// Used to generate a token
-			// Initialise a variable used to store the token
-			$token = null;
-			// Create a salt of accepted characters
-			$salt = "abcdefghjkmnpqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ0123456789";
-			
-			srand((double)microtime()*1000000);
-			$i = 0;
-			while ($i < $token_length) {
-				$num = rand() % strlen($salt);
-				$tmp = substr($salt, $num, 1);
-				$token = $token . $tmp;
-				$i++;
-			}
-			// Return the token
-			return $token;
+			// Use a cryptographically secure generator so that the value can't be predicted
+			return Random::string($token_length);
 		}
 		
 		// Method to check if submitted IP address is in IP address format

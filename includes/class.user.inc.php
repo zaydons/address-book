@@ -72,7 +72,7 @@
 			};
 				
 			// Check that the users HTTP agent hasn't changed
-			if(($_SERVER['HTTP_USER_AGENT'] != $session->get('user_agent'))) {
+			if((($_SERVER['HTTP_USER_AGENT'] ?? '') != $session->get('user_agent'))) {
 				// Delete the $session->get('user_agent') to avoid redirects
 				$session->remove('user_agent');
 				// Log the user out
@@ -89,7 +89,7 @@
 					$this->logout('security_failed');
 				}
 				// Check that the users HTTP agent is the same as when they logged in
-				if(($_SERVER['HTTP_USER_AGENT'] != $session->get('authenticated_user_agent'))) {
+				if((($_SERVER['HTTP_USER_AGENT'] ?? '') != $session->get('authenticated_user_agent'))) {
 					// Delete the $session->get('authenticated_user_agent') to avoid redirects
 					$session->remove('authenticated_user_agent');
 					// Log the user out
@@ -115,6 +115,10 @@
 					// Check that the password matches
 					if($result) {
 						// Username and password matches
+						// Upgrade the stored hash if it was made with an older algorithm or cost
+						if(password_needs_rehash($user['hashed_password'], PASSWORD_DEFAULT)) {
+							$this->update(array('hashed_password' => $this->password_encrypt($password)), $user['user_id']);
+						}
 						// Return the $user details
 						return $user;
 					} else {
@@ -161,6 +165,11 @@
 				// Remove any pre-existing settings
 				$this->remove_authenticated();
 				
+				// Issue a new session ID so that a session ID obtained before logging in can't be used to hijack the session
+				session_regenerate_id(true);
+				// Remove the CSRF token so that a new one is generated for the authenticated session
+				$session->remove('csrf_token');
+				
 				// Set value to notify that the user has been authenticated
 				$session->set('authenticated_user', '1');
 				$this->authenticated = true;
@@ -168,7 +177,7 @@
 				// Set details gathered about the session from when the user was authenticated
 				// Remove any pre-existing details
 				$session->set('authenticated_user_ip', $_SERVER['REMOTE_ADDR']);
-				$session->set('authenticated_user_agent', $_SERVER['HTTP_USER_AGENT']);
+				$session->set('authenticated_user_agent', $_SERVER['HTTP_USER_AGENT'] ?? '');
 				$session->set('authenticated_user_time', time());
 				
 				// Set details gathered about the user
@@ -183,16 +192,8 @@
 		
 		// Used for verifying that users supplied password matches
 		private function password_check($password, $existing_hash) {
-			// Exisiting hash contains format and salt at start
-			$hash = crypt($password, $existing_hash);
-			// Check that passwords are correct
-			if($hash === $existing_hash) {
-				// Passwords match
-				return true;
-			} else {
-				// Passwords don't match
-				return false;
-			}
+			// password_verify() reads the algorithm and salt from the existing hash and compares in constant time
+			return password_verify($password, $existing_hash);
 		}
 	
 		// Method to find a specific username
@@ -273,6 +274,11 @@
 			// Remove authenticated elements
 			$this->remove_authenticated();
 			
+			// Issue a new session ID so that the authenticated session ID can't be reused
+			session_regenerate_id(true);
+			// Remove the CSRF token which belonged to the authenticated session
+			$session->remove('csrf_token');
+			
 			// Use switch statement to determine if user has been automatically logged out due to failing a security check
 			switch($message) {
 				case 'not_authenticated' :
@@ -311,8 +317,7 @@
 				// Begin prepared statement to delete a single ID from the database
 				$sql = '
 					DELETE FROM users 
-					WHERE user_id = :user_id 
-					LIMIT 1
+					WHERE user_id = :user_id
 				';
 				$stmt = $this->db->prepare($sql);
 
@@ -358,9 +363,8 @@
 					}
 				}
 				
-				// Specify which user to update and limit to update only 1 record as a fail-safe
-				$sql .= "WHERE user_id = :user_id ";
-				$sql .= "LIMIT 1";
+				// Specify which user to update - the ID is unique, so only 1 record is updated
+				$sql .= " WHERE user_id = :user_id";
 				
 				// Begin a prepared statement using the previous $sql
 				$stmt = $this->db->prepare($sql);
@@ -472,62 +476,45 @@
 		
 		// Generate an ID to be used as the unique key associated with a new contact which is being created
 		private function generate_id($token_length) {
-			// Used to generate a token
-			// Initialise a variable used to store the token
-			$token = null;
-			// Create a salt of accepted characters
-			$salt = "abcdefghjkmnpqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ0123456789";
-			
-			srand((double)microtime()*1000000);
-			$i = 0;
-			while ($i < $token_length) {
-				$num = rand() % strlen($salt);
-				$tmp = substr($salt, $num, 1);
-				$token = $token . $tmp;
-				$i++;
-			}
-			// Return the token
-			return $token;
+			// Use a cryptographically secure generator so that the value can't be predicted
+			return Random::string($token_length);
 		}
 		
-		// Static method to allow for passwords to be encrypted and salted using the Blowfish method
+		// Used to hash a password for storage in the database
 		// Requires a $password to be passed in
 		public function password_encrypt($password = null) {
-			// Tell PHP to use the Blowfish password format ($2y) with a "cost" of 10 ($10$)
-			$hash_format = "$2y$10$";
-			// Specify a salt length - Blowfish salts should be 22 characters in length
-			// http://php.net/manual/en/function.crypt.php
-			$salt_length = 22;
-			// Generate the salt passing in the length from the $salt_length
-			$salt = $this->generate_salt($salt_length);
-			// Concatenate the $hash_format with the $salt
-			$format_and_salt = $hash_format . $salt;
-			
 			// Check that a password has been sent
 			if(!empty($password)) {
-				// Encrypt the $password with the $format_and_salt to return an encrypted password
-				return $encrypted_password = crypt($password, $format_and_salt);
+				// Hash the $password using PHP's current recommended algorithm, which generates its own salt
+				return password_hash($password, PASSWORD_DEFAULT);
 			} else {
 				// Password wasn't sent
 				return false;
 			};
 		}
 		
-		// Generate a salt for used in password encryption
-		private function generate_salt($length) {
-			// Below is not 100% unique or 100% random - however is perfectly fine for a salt
+		// Used to validate a new password against the password rules, returns an array of any errors found
+		public function password_errors($password, $confirm_password) {
+			// Bring in the $validation array so that standard messages are brought in
+			global $validation;
 			
-			// Return 32 characters using MD5
-			$unique_random_string = md5(uniqid(mt_rand(), true));
+			// Initialise the $errors array where errors will be sent and then retrieved from
+			$errors = array();
 			
-			// Specify the valid characters for the salt - [a-zA-Z0-9./]
-			$base64_string = base64_encode($unique_random_string);
+			// Password must be at least 8 characters in length
+			if(strlen($password) < 8) 		{ $errors[] = $validation["too_short"]["user"]["password"]; };
+			// Password must be the same as the confirmed password
+			if($password !== $confirm_password) 	{ $errors[] = $validation["password"]["no_match"]; };
 			
-			// Using base64_encode will also include '+' characters - these must be removed
-			$modified_base64_string = str_replace('+', '.', $base64_string);
+			// Password must contain at least 1 lower case character (a-z)
+			if(preg_match("~[a-z]~", $password) == 0) { $errors[] = $validation["password"]["no_lowercase"]; };
+			// Password must contain at least 1 upper case character (A-Z)
+			if(preg_match("~[A-Z]~", $password) == 0) { $errors[] = $validation["password"]["no_uppercase"]; };
+			// Password must contain at least 1 numeric character (0-9)
+			if(preg_match("~[0-9]~", $password) == 0) { $errors[] = $validation["password"]["no_numeric"]; };
 			
-			// Truncate string to the correct length and return
-			return $salt = substr($modified_base64_string, 0, $length);
+			// Return any errors found
+			return $errors;
 		}
 		
 	} // Close class User

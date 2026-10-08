@@ -18,14 +18,16 @@
 		
 		// Used to check a submitted token with a token stored in the session
 		public static function check_token($submitted_token) {
-			// Check if a token was submitted
-			if($submitted_token) {
+			// Bring in the session variable
+			global $session;
+			// Obtain the token stored in the session
+			$session_token = $session->get('csrf_token');
+			
+			// Check if a token was submitted and that one exists in the session
+			if(is_string($submitted_token) && $submitted_token !== '' && is_string($session_token)) {
 				// Token was submitted
-				// Bring in the session variable
-				global $session;
-				
-				// Check if the submitted token matches the one in the database
-				if($submitted_token == $session->get('csrf_token')) {
+				// Check if the submitted token matches the one in the session, using a constant-time comparison
+				if(hash_equals($session_token, $submitted_token)) {
 					// Token is the same
 					return true;
 				} else {
@@ -50,21 +52,8 @@
 		
 		// Used to generate a token
 		private static function generate_token($token_length) {
-			// Initialise a variable used to store the token
-			$token = null;
-			// Create a salt of accepted characters
-			$salt = "abcdefghjkmnpqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ0123456789";
-			
-			srand((double)microtime()*1000000);
-			$i = 0;
-			while ($i < $token_length) {
-				$num = rand() % strlen($salt);
-				$tmp = substr($salt, $num, 1);
-				$token = $token . $tmp;
-				$i++;
-			}
-			// Return the token
-			return $token;
+			// Use a cryptographically secure generator so that the value can't be predicted
+			return Random::string($token_length);
 		}
 		
 	}; // Close class

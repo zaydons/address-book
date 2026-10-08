@@ -30,30 +30,20 @@
 		if(!isset($_POST["confirm_password"]) 	|| empty($_POST["confirm_password"])) 	{ $errors[] = $validation["field_required"]["user"]["confirm_password"]; };
 		
 		// Check that the submitted CSRF token is the same as the one in the $_SESSION to prevent cross site request forgery
-		if(!CSRF::check_token($_POST['csrf_token']))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
+		if(!CSRF::check_token($_POST['csrf_token'] ?? null))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
 		
 		// Length of fields
-		$length_username 			= 		strlen($_POST["username"]);
-		$length_full_name 			= 		strlen($_POST["full_name"]);
-		$length_password 			= 		strlen($_POST["password"]);
-		$length_confirm_password 	= 		strlen($_POST["confirm_password"]);
+		$length_username 			= 		strlen($_POST["username"] ?? "");
+		$length_full_name 			= 		strlen($_POST["full_name"] ?? "");
+		$length_password 			= 		strlen($_POST["password"] ?? "");
+		$length_confirm_password 	= 		strlen($_POST["confirm_password"] ?? "");
 		
 		// Named fields musn't be longer than length in the database, if they are then populate the $errors array
 		if($length_username > 100) 		{ $errors[] = $validation["too_long"]["user"]["username"]; };
 		if($length_username > 100) 		{ $errors[] = $validation["too_long"]["user"]["full_name"]; };
 		
-		// Password validation
-		// Password must be at least 8 characters in length
-		if($length_password < 8) 		{ $errors[] = $validation["too_short"]["user"]["password"]; };
-		// Password must be the same as the confirmed password
-		if($_POST["password"] !== $_POST["confirm_password"]) 	{ $errors[] = $validation["password"]["no_match"]; };
-		
-		// Password must contain at least 1 lower case character (a-z)
-		if(preg_match("~[a-z]~", $_POST["password"]) == 0) { $errors[] = $validation["password"]["no_lowercase"]; };
-		// Password must contain at least 1 upper case character (A-Z)
-		if(preg_match("~[A-Z]~", $_POST["password"]) == 0) { $errors[] = $validation["password"]["no_uppercase"]; };
-		// Password must contain at least 1 numeric character (0-9)
-		if(preg_match("~[0-9]~", $_POST["password"]) == 0) { $errors[] = $validation["password"]["no_numeric"]; };
+		// Password validation, such as length and complexity rules
+		$errors = array_merge($errors, $user->password_errors($_POST["password"] ?? "", $_POST["confirm_password"] ?? ""));
 		
 		// If no errors have been found during the field validations
 		if(empty($errors)) {
@@ -70,6 +60,8 @@
 				!empty($_POST['username']) 					? $fields['username'] = $_POST['username']									: $fields['username'] = null;
 				!empty($_POST['full_name']) 				? $fields['full_name'] = $_POST['full_name'] 								: $fields['full_name'] = null;
 				!empty($_POST['password']) 					? $fields['hashed_password'] = $user->password_encrypt($_POST['password']) 	: $fields['hashed_password'] = null;
+				// The password is set by another user, so the new user must choose their own password when they first log in
+				$fields['must_change_password'] = 1;
 				
 				// Create the new contact, inserting the fields from the $fields array
 				$result = $user->create($fields);
@@ -124,10 +116,10 @@
 			<!-- CONTENT -->
 			<?php $session->output_message(); ?>
 			
-			<form class="form-horizontal" action="" method="post">
+			<form action="" method="post">
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Full Name</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Full Name</label>
 					<div class="col-sm-10">
 						<input type="text" class="form-control" name="full_name" placeholder="Full Name" maxlength="100" <?php if(isset($_POST["full_name"])){ echo "value=\"" . htmlentities($_POST["full_name"]) . "\""; }; ?> required>
 					</div>
@@ -135,8 +127,8 @@
 				
 				<hr>
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Username</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Username</label>
 					<div class="col-sm-10">
 						<input type="text" class="form-control" name="username" placeholder="Username" maxlength="100" <?php if(isset($_POST["username"])){ echo "value=\"" . htmlentities($_POST["username"]) . "\""; }; ?> required>
 					</div>
@@ -144,8 +136,8 @@
 				
 				<hr>
 				
-				<div class="form-group">
-					<div class="col-sm-offset-1 col-sm-11">
+				<div class="row gy-2 mb-3">
+					<div class="offset-sm-1 col-sm-11">
 						<p>Passwords <strong>MUST</strong> comply with the following rules:</p>
 						<ul>
 							<li>Password must be a minimum of 8 characters in length.</li>
@@ -156,13 +148,13 @@
 					</div>
 				</div>
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Password</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Password</label>
 					<div class="col-sm-4">
 						<input type="password" class="form-control" name="password" placeholder="Password" required>
 					</div>
 					
-					<label class="col-sm-2 control-label">Confirm Password</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Confirm Password</label>
 					<div class="col-sm-4">
 						<input type="password" class="form-control" name="confirm_password" placeholder="Confirm Password" required>
 					</div>
@@ -170,9 +162,9 @@
 				
 				<input type="hidden" name="csrf_token" value="<?php echo htmlentities($csrf_token); ?>"/>
 				
-				<div class="form-group">
-					<div class="col-sm-offset-2 col-sm-10">
-						<button type="submit" name="submit" value="submit" class="btn btn-default">Submit</button>
+				<div class="row gy-2 mb-3">
+					<div class="offset-sm-2 col-sm-10">
+						<button type="submit" name="submit" value="submit" class="btn btn-primary">Submit</button>
 					</div>
 				</div>
 			</form>

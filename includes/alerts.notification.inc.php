@@ -7,7 +7,16 @@
 		"login" => array (
 			"success" => "You have been logged in successfully.",
 			"failure" => "Username/password combination not found.",
-			"redirect" => "You are already authenticated, so you have been redirected away from the login page to the home page."
+			"redirect" => "You are already authenticated, so you have been redirected away from the login page to the home page.",
+			"locked" => "There have been too many failed login attempts. Please wait a few minutes and then try again."
+		),
+		
+		// Notifications which display when a user changes their own password
+		"password_change" => array (
+			"required" => "You must choose a new password before you can continue.",
+			"success" => "Your password has been changed successfully.",
+			"failure" => "There was an error changing your password. Please try again.",
+			"same" => "Your new password must be different to your current password.",
 		),
 		
 		"logout" => array (

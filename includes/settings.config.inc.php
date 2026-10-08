@@ -1,26 +1,32 @@
 <?php
 	
-	// Check if a custom settings file has been created with all the relevant constants
-	if(!file_exists("../includes/settings.local.inc.php")) {
-		// Output to screen that the file is missing and go no further
-		echo 'A config file could not be found. Please create a file inside the includes/ directory called "settings.local.inc.php".';
+	// Settings are read from includes/settings.local.inc.php if it exists, and any that it doesn't set are read from environment variables
+	// Environment variables allow the system to be configured without editing files, such as when running in a container (see the README)
+	if(file_exists(__DIR__ . "/settings.local.inc.php")) {
+		require_once(__DIR__ . "/settings.local.inc.php");
+	};
+	
+	// Settings which can be set as environment variables
+	foreach(array('DB_PATH', 'SITE_URL', 'TIMEZONE', 'LOGIN_MAX_FAILED_USERNAME', 'LOGIN_MAX_FAILED_IP', 'LOGIN_LOCKOUT_MINUTES') as $setting_name) {
+		if(!defined($setting_name) && getenv($setting_name) !== false) {
+			define($setting_name, getenv($setting_name));
+		};
+	};
+	
+	// Check that settings have been provided in one of the two ways
+	if(!defined('SITE_URL') && !defined('TIMEZONE')) {
+		// Output to screen that the settings are missing and go no further
+		echo 'The system has not been configured. Please create a file inside the includes/ directory called "settings.local.inc.php", or set the settings as environment variables.';
 		echo '<br>';
 		echo 'For an example file simply create a copy of the "EXAMPLE.settings.local.inc.php" and rename it to "settings.local.inc.php", you can then input the details relating to your set up.';
 		die();
 	};
-	
-	// Require the localsetting.inc.php
-	require_once('settings.local.inc.php');
 	
 	// Check that the required settings for the system to function have been defined
 	// Initialise an $errors array to store any errors
 	$errors = array();
 	
 	// Check that constants are defined
-	if(!defined('DB_SERVER')) 	{ $errors[] = "DB_SERVER is not defined. Please add the following as a new line to your includes/settings.local.inc.php file: <b>define('DB_SERVER', 'YOUR DATABASE IP/HOSTNAME');</b>"; };
-	if(!defined('DB_USER')) 	{ $errors[] = "DB_USER is not defined. Please add the following as a new line to your includes/settings.local.inc.php file: <b>define('DB_USER', 'YOUR DATABASE USERNAME');</b>"; };
-	if(!defined('DB_PASS')) 	{ $errors[] = "DB_PASS is not defined. Please add the following as a new line to your includes/settings.local.inc.php file: <b>define('DB_PASS', 'YOUR DATABASE USER PASSWORD');</b>"; };
-	if(!defined('DB_NAME')) 	{ $errors[] = "DB_NAME is not defined. Please add the following as a new line to your includes/settings.local.inc.php file: <b>define('DB_NAME', 'YOUR DATABASE NAME');</b>"; };
 	if(!defined('SITE_URL')) 	{ $errors[] = "SITE_URL is not defined. Please add the following as a new line to your includes/settings.local.inc.php file: <b>define('SITE_URL', 'YOUR SITE URL');</b>"; };
 	if(!defined('TIMEZONE')) 	{ $errors[] = "TIMEZONE is not defined. Please add the following as a new line to your includes/settings.local.inc.php file: <b>define('TIMEZONE', 'YOUR TIMEZONE');</b>"; };
 
@@ -36,8 +42,18 @@
 		die();
 	}; // Close if(!empty($errors))
 	
-	// Set the database driver to MySQL
-	define("DB_TYPE", "mysql");
+	// The SQLite database file, which is created if it doesn't exist
+	// By default this is in the data/ directory, which is outside of the html/ directory so that it can't be downloaded
+	defined("DB_PATH")								?	null	:	define("DB_PATH", dirname(__DIR__) . "/data/address-book.sqlite");
+
+	// Limits on failed logins, to slow down attempts to guess passwords
+	// These can be overridden in settings.local.inc.php
+	// Number of failed logins allowed for a single username within the window before further attempts are blocked
+	defined("LOGIN_MAX_FAILED_USERNAME")			?	null	:	define("LOGIN_MAX_FAILED_USERNAME", 5);
+	// Number of failed logins allowed from a single IP address within the window before further attempts are blocked
+	defined("LOGIN_MAX_FAILED_IP")					?	null	:	define("LOGIN_MAX_FAILED_IP", 20);
+	// Length of the window, in minutes
+	defined("LOGIN_LOCKOUT_MINUTES")				?	null	:	define("LOGIN_LOCKOUT_MINUTES", 15);
 
 	// Set page names
 	defined("PAGENAME_INDEX")						?	null	:	define("PAGENAME_INDEX", "Address Book");
@@ -57,6 +73,7 @@
 	defined("PAGENAME_APIADD")						?	null	:	define("PAGENAME_APIADD", "Add API Token");
 	defined("PAGENAME_APIDELETE")					?	null	:	define("PAGENAME_APIDELETE", "Delete API Token");
 	defined("PAGENAME_APIUPDATE")					?	null	:	define("PAGENAME_APIUPDATE", "Update API Token");
+	defined("PAGENAME_CHANGEPASSWORD")				?	null	:	define("PAGENAME_CHANGEPASSWORD", "Change Password");
 	
 	// Set page links
 	defined("PAGELINK_INDEX")						?	null	:	define("PAGELINK_INDEX", "index.php");
@@ -74,6 +91,7 @@
 	defined("PAGELINK_APIADD")						?	null	:	define("PAGELINK_APIADD", "add-api.php");
 	defined("PAGELINK_APIDELETE")					?	null	:	define("PAGELINK_APIDELETE", "delete-api.php");
 	defined("PAGELINK_APIUPDATE")					?	null	:	define("PAGELINK_APIUPDATE", "update-api.php");
+	defined("PAGELINK_CHANGEPASSWORD")				?	null	:	define("PAGELINK_CHANGEPASSWORD", "change-password.php");
 	
 	// Server time zone
  	date_default_timezone_set(TIMEZONE);
@@ -84,11 +102,26 @@
 		include('class.' . $class_name . '.inc.php');
 	});
 	
-	// Begin running the Session as items in constructor are required for the system to function correctly
-	$session = new Session();
+	// Handle any unexpected errors, such as a database failure, without revealing details to the user
+	set_exception_handler(function($exception) {
+		// Record the full details in the server error log for the administrator
+		error_log('Address Book: ' . $exception);
+		// Show a generic message to the user
+		if(!headers_sent()) {
+			http_response_code(500);
+		}
+		echo 'An unexpected error occurred. Please try again later, and if the problem continues contact a system administrator.';
+		exit;
+	});
 	
-	// Begin a new User instance as will automatically check details of the user if they are logged in etc
-	$user = new User();
+	// Security headers sent with every page
+	// Stop the system being loaded inside a frame on another site (clickjacking)
+	header("X-Frame-Options: DENY");
+	header("Content-Security-Policy: frame-ancestors 'none'");
+	// Stop browsers guessing a different content type to the one sent
+	header("X-Content-Type-Options: nosniff");
+	// Only send the full URL as a referrer to this site
+	header("Referrer-Policy: same-origin");
 	
 	// Site functions
 	require_once("functions.inc.php");
@@ -98,5 +131,19 @@
 	
 	// Validation messages for form fields, such as string lengths too long, or required fields missing
 	require_once("alerts.validation.inc.php");
+	
+	// Begin running the Session as items in constructor are required for the system to function correctly
+	$session = new Session();
+	
+	// Begin a new User instance as will automatically check details of the user if they are logged in etc
+	$user = new User();
+	
+	// A user who has been given a password by someone else (including the default admin account) must change it before using the system
+	if($user->authenticated && !empty($user->details['must_change_password'])) {
+		// Allow the change password and log out pages, redirect anything else to the change password page
+		if(!in_array(basename($_SERVER['SCRIPT_NAME']), array(PAGELINK_CHANGEPASSWORD, PAGELINK_LOGOUT))) {
+			Redirect::to(PAGELINK_CHANGEPASSWORD);
+		}
+	}
 
 ?>

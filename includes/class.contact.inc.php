@@ -63,11 +63,11 @@
 					// Set the properties of the class as per the users details
 					$this->full_name = htmlentities($this->full_name($result));
 					$this->full_address = htmlentities($this->full_address($result));
-					$this->email = htmlentities($result['contact_email']);
-					$this->date_of_birth = htmlentities($this->cosmetic_mysqldate($result["date_of_birth"]));
-					$this->number['home']['raw'] = htmlentities($result['contact_number_home']);
+					$this->email = htmlentities($result['contact_email'] ?? '');
+					$this->date_of_birth = htmlentities($this->cosmetic_date($result["date_of_birth"]));
+					$this->number['home']['raw'] = htmlentities($result['contact_number_home'] ?? '');
 					$this->number['home']['formatted'] = htmlentities($this->format_phone_number($result['contact_number_home']));
-					$this->number['mobile']['raw'] = htmlentities($result['contact_number_mobile']);
+					$this->number['mobile']['raw'] = htmlentities($result['contact_number_mobile'] ?? '');
 					$this->number['mobile']['formatted'] = htmlentities($this->format_phone_number($result['contact_number_mobile']));
 					
 					// Return all of the details of the contact
@@ -142,9 +142,8 @@
 						}
 					}
 					
-					// Specify which contact to update and limit to update only 1 record as a fail-safe
-					$sql .= "WHERE contact_id = :contact_id ";
-					$sql .= "LIMIT 1";
+					// Specify which contact to update - the ID is unique, so only 1 record is updated
+					$sql .= " WHERE contact_id = :contact_id";
 					
 					// Begin a prepared statement using the previous $sql
 					$stmt = $this->db->prepare($sql);
@@ -184,8 +183,7 @@
 				// Begin prepared statement to delete a single ID from the database
 				$sql = '
 					DELETE FROM contacts 
-					WHERE contact_id = :contact_id 
-					LIMIT 1
+					WHERE contact_id = :contact_id
 				';
 				$stmt = $this->db->prepare($sql);
 
@@ -291,22 +289,8 @@
 		
 		// Generate an ID to be used as the unique key associated with a new contact which is being created
 		private function generate_id($token_length) {
-			// Used to generate a token
-			// Initialise a variable used to store the token
-			$token = null;
-			// Create a salt of accepted characters
-			$salt = "abcdefghjkmnpqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ0123456789";
-			
-			srand((double)microtime()*1000000);
-			$i = 0;
-			while ($i < $token_length) {
-				$num = rand() % strlen($salt);
-				$tmp = substr($salt, $num, 1);
-				$token = $token . $tmp;
-				$i++;
-			}
-			// Return the token
-			return $token;
+			// Use a cryptographically secure generator so that the value can't be predicted
+			return Random::string($token_length);
 		}
 		
 		public function format_phone_number($phone_number) {
@@ -318,7 +302,7 @@
 		
 		public function remove_white_space($string) {
 			// Remove all white space within the string
-			return preg_replace('/\s+/', '', $string);
+			return preg_replace('/\s+/', '', $string ?? '');
 		}
 		
 		public function full_name(array $contact){
@@ -343,10 +327,10 @@
 			}
 		}
 		
-		private function cosmetic_mysqldate($mysql_date = null) {
-			if($mysql_date) {
-				// Convert MySQL date to a UNIX time stamp
-				$unix_date = strtotime($mysql_date);
+		private function cosmetic_date($database_date = null) {
+			if($database_date) {
+				// Convert the database date (YYYY-MM-DD) to a UNIX time stamp
+				$unix_date = strtotime($database_date);
 				
 				// Format date into correct string, example: Saturday 1st May 1993
 				$cosmetic_date = date('jS F Y', $unix_date);

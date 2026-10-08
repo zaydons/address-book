@@ -1,5 +1,36 @@
 # Address Book Changelog
 
+## 1.1.0 (Unreleased)
+
+The system now stores its data in SQLite instead of MySQL/MariaDB, and includes security fixes. Existing installations should copy their data with [tools/mysql-to-sqlite.php](tools/mysql-to-sqlite.php), see the README.
+
+- Data is stored in a single SQLite database file instead of a MySQL/MariaDB server. The file and its tables are created automatically on first use. The `DB_SERVER`, `DB_USER`, `DB_PASS` and `DB_NAME` settings are replaced by `DB_PATH`, which is optional.
+- Added [tools/mysql-to-sqlite.php](tools/mysql-to-sqlite.php) to copy an existing MySQL database into SQLite.
+- Usernames are not case sensitive, as before (`Admin` and `admin` are the same user).
+- Random IDs, API tokens and CSRF tokens are generated with a cryptographically secure generator (`random_int()`) instead of `rand()`.
+- Passwords are hashed with `password_hash()` and checked with `password_verify()`. Existing hashes are upgraded automatically when users log in.
+- The session ID is changed when logging in and out, to prevent session fixation.
+- The session cookie is set as `HttpOnly` and `SameSite=Lax`, and `Secure` when the site is served over HTTPS. Session IDs are only accepted from cookies and must have been issued by the server.
+- The default `admin` account, new users, and users whose password is set by another user must choose a new password at their next login.
+- CSRF tokens are compared in constant time with `hash_equals()`.
+- Fixed the password form on the update user page not checking the CSRF token.
+- Fixed the username entered on the login page being shown back without escaping (reflected cross-site scripting).
+- API tokens can be sent in an `Authorization: Bearer` header. The `t` GET value still works. Only the first 4 characters of a token are recorded in the logs.
+- Failed logins are limited per username and per IP address (configurable with `LOGIN_MAX_FAILED_USERNAME`, `LOGIN_MAX_FAILED_IP` and `LOGIN_LOCKOUT_MINUTES`).
+- Database errors are recorded in the server error log instead of being shown on the page, and a generic error page is shown instead.
+- Logging out requires a form submission with a CSRF token, so other sites can't log users out with a link.
+- Missing or non-text API values (`m`, `q`) no longer cause PHP warnings or errors.
+- Pages send `X-Frame-Options`, `Content-Security-Policy: frame-ancestors 'none'`, `X-Content-Type-Options` and `Referrer-Policy` headers.
+- Docker: a single container runs the system on Apache and PHP `8.5`, replacing the separate Nginx, PHP-FPM and MySQL containers. The database is kept in a Docker volume.
+- Updated Bootstrap from 3.4.1 to 5.3.8 and DataTables from 1.10.15 to 3.1.3, and removed jQuery, which neither needs. This fixes the navigation menu not opening on small screens, which broke when jQuery was updated to 3.5.0.
+- Pages now scale correctly on phones, and wide tables scroll within the page instead of making the whole page scroll sideways.
+- Added support for running as a TrueNAS SCALE custom app: an image of the system published to the GitHub Container Registry by GitHub Actions, and a ready-to-use [TrueNAS YAML file](truenas/address-book.yaml).
+- Settings can be set as environment variables as well as in `settings.local.inc.php`.
+- Added a dark theme. It follows the device's light/dark setting, and a button in the navigation bar switches between Auto, Dark and Light (remembered in the browser).
+- Fixed PHP 8.1+ deprecation notices when viewing, updating or deleting a contact without an email address or phone number, and when a form is submitted with fields missing.
+- Documented running behind a reverse proxy.
+- Fixed site functions and messages being loaded after the session and user checks, which caused an error when a logged in user was logged out for a failed security check.
+
 ## 1.0.6 (2025-03-28)
 
 - Docker PHP support updated version `8.4` ([#8](https://github.com/AlexWinder/address-book/issues/8)).

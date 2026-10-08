@@ -1,0 +1,30 @@
+# Address Book - TrueNAS SCALE custom app
+#
+# In TrueNAS: Apps > Discover Apps > Custom App (the three dots menu) > Install via YAML,
+# give the app a name, and paste this file. See the README for the full steps.
+#
+# Before installing, change:
+#   1. SITE_URL to the address you will use to reach the system.
+#   2. TIMEZONE, if you don't want UTC.
+#
+# On the first login you will be asked to change the default admin password (admin / LetMeIn123).
+
+services:
+  app:
+    image: ghcr.io/zaydons/address-book:latest
+    restart: unless-stopped
+    ports:
+      # TrueNAS uses ports 80 and 443 for its own web interface, so the system is on port 8080
+      - "8080:80"
+    environment:
+      SITE_URL: "http://truenas.local:8080/"
+      TIMEZONE: "UTC"
+    volumes:
+      # The SQLite database is kept in a Docker volume, which survives app updates and restarts.
+      # To keep it in a dataset instead (for snapshots and backups), create an empty dataset and replace
+      # this line with one like the following. The app sets the directory's ownership when it starts.
+      #   - /mnt/tank/apps/address-book:/data
+      - address-book-data:/data
+
+volumes:
+  address-book-data:

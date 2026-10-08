@@ -32,7 +32,7 @@
 			<!-- CONTENT -->
 			<?php $session->output_message(); ?>
 			
-			<table id="<?php echo $datatables_table_id; ?>">
+			<table id="<?php echo $datatables_table_id; ?>" class="table table-striped table-hover" style="width: 100%">
 				<thead>
 					<tr>
 						<th>Date</th>

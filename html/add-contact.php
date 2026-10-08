@@ -32,20 +32,20 @@
 		if(!isset($_POST["address_post_code"]) 	|| empty($_POST["address_post_code"])) 	{ $errors[] = $validation["field_required"]["contact"]["address_post_code"]; };
 		
 		// Check that the submitted CSRF token is the same as the one in the $_SESSION to prevent cross site request forgery
-		if(!CSRF::check_token($_POST['csrf_token']))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
+		if(!CSRF::check_token($_POST['csrf_token'] ?? null))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
 		
 		// Length of fields
-		$length_first_name = 		strlen($_POST["first_name"]);
-		$length_middle_name = 		strlen($_POST["middle_name"]);
-		$length_last_name = 		strlen($_POST["last_name"]);
-		$length_home_number = 		strlen($_POST["contact_number_home"]);
-		$length_mobile_number = 	strlen($_POST["contact_number_mobile"]);
-		$length_contact_email = 	strlen($_POST["contact_email"]);
-		$length_address_line_1 =	strlen($_POST["address_line_1"]);
-		$length_address_line_2 = 	strlen($_POST["address_line_2"]);
-		$length_address_town = 		strlen($_POST["address_town"]);
-		$length_address_county = 	strlen($_POST["address_county"]);
-		$length_address_post_code = strlen($_POST["address_post_code"]);
+		$length_first_name = 		strlen($_POST["first_name"] ?? "");
+		$length_middle_name = 		strlen($_POST["middle_name"] ?? "");
+		$length_last_name = 		strlen($_POST["last_name"] ?? "");
+		$length_home_number = 		strlen($_POST["contact_number_home"] ?? "");
+		$length_mobile_number = 	strlen($_POST["contact_number_mobile"] ?? "");
+		$length_contact_email = 	strlen($_POST["contact_email"] ?? "");
+		$length_address_line_1 =	strlen($_POST["address_line_1"] ?? "");
+		$length_address_line_2 = 	strlen($_POST["address_line_2"] ?? "");
+		$length_address_town = 		strlen($_POST["address_town"] ?? "");
+		$length_address_county = 	strlen($_POST["address_county"] ?? "");
+		$length_address_post_code = strlen($_POST["address_post_code"] ?? "");
 		
 		// Name fields musn't be longer than length in the database, if they are then populate the $errors array
 		if($length_first_name > 50) 		{ $errors[] = $validation["too_long"]["contact"]["first_name"]; }; 
@@ -126,20 +126,20 @@
 			<!-- CONTENT -->
 			<?php $session->output_message(); ?>
 			
-			<form class="form-horizontal" action="" method="post">
+			<form action="" method="post">
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">First Name</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">First Name</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="first_name" placeholder="First Name" maxlength="50" <?php if(isset($_POST["first_name"])){ echo "value=\"" . htmlentities($_POST["first_name"]) . "\""; }; ?> required>
 					</div>
 					
-					<label class="col-sm-2 control-label">Middle Name</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Middle Name</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="middle_name" placeholder="Middle Name" maxlength="50" <?php if(isset($_POST["middle_name"])){ echo "value=\"" . htmlentities($_POST["middle_name"]) . "\""; }; ?>>
 					</div>
 					
-					<label class="col-sm-2 control-label">Last Name</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Last Name</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="last_name" placeholder="Last Name" maxlength="50" <?php if(isset($_POST["last_name"])){ echo "value=\"" . htmlentities($_POST["last_name"]) . "\""; }; ?> required>
 					</div>
@@ -147,25 +147,25 @@
 				
 				<hr>
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Contact Number Home</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Contact Number Home</label>
 					<div class="col-sm-4">
 						<input type="number" class="form-control" name="contact_number_home" placeholder="Contact Number Home" maxlength="20" <?php if(isset($_POST["contact_number_home"])){ echo "value=\"" . htmlentities($_POST["contact_number_home"]) . "\""; }; ?>>
 					</div>
 					
-					<label class="col-sm-2 control-label">Contact Number Mobile</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Contact Number Mobile</label>
 					<div class="col-sm-4">
 						<input type="number" class="form-control" name="contact_number_mobile" placeholder="Contact Number Mobile" maxlength="20" <?php if(isset($_POST["contact_number_mobile"])){ echo "value=\"" . htmlentities($_POST["contact_number_mobile"]) . "\""; }; ?>>
 					</div>
 				</div>
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Email</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Email</label>
 					<div class="col-sm-4">
 						<input type="email" class="form-control" name="contact_email" placeholder="Email" maxlength="100" <?php if(isset($_POST["contact_email"])){ echo "value=\"" . htmlentities($_POST["contact_email"]) . "\""; }; ?>>
 					</div>
 					
-					<label class="col-sm-2 control-label">Date Of Birth</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Date Of Birth</label>
 					<div class="col-sm-4">
 						<input type="date" class="form-control" name="date_of_birth" placeholder="Date Of Birth" <?php if(isset($_POST["date_of_birth"])){ echo "value=\"" . htmlentities($_POST["date_of_birth"]) . "\""; }; ?>>
 					</div>
@@ -173,28 +173,28 @@
 				
 				<hr>
 				
-				<div class="form-group">
-					<label class="col-sm-2 control-label">Address Line 1</label>
+				<div class="row gy-2 mb-3">
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Address Line 1</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="address_line_1" placeholder="Address Line 1" maxlength="100" <?php if(isset($_POST["address_line_1"])){ echo "value=\"" . htmlentities($_POST["address_line_1"]) . "\""; }; ?> required>
 					</div>
 					
-					<label class="col-sm-2 control-label">Address Line 2</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Address Line 2</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="address_line_2" placeholder="Address Line 2" maxlength="100" <?php if(isset($_POST["address_line_2"])){ echo "value=\"" . htmlentities($_POST["address_line_2"]) . "\""; }; ?>>
 					</div>
 					
-					<label class="col-sm-2 control-label">Address Town</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Address Town</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="address_town" placeholder="Address Town" maxlength="100" <?php if(isset($_POST["address_town"])){ echo "value=\"" . htmlentities($_POST["address_town"]) . "\""; }; ?> required>
 					</div>
 					
-					<label class="col-sm-2 control-label">Address County</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Address County</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="address_county" placeholder="Address County" maxlength="100" <?php if(isset($_POST["address_county"])){ echo "value=\"" . htmlentities($_POST["address_county"]) . "\""; }; ?> required>
 					</div>
 					
-					<label class="col-sm-2 control-label">Address Postcode</label>
+					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Address Postcode</label>
 					<div class="col-sm-4">
 						<input type="text" class="form-control" name="address_post_code" placeholder="Address Postcode" maxlength="20" <?php if(isset($_POST["address_post_code"])){ echo "value=\"" . htmlentities($_POST["address_post_code"]) . "\""; }; ?> required>
 					</div>
@@ -202,9 +202,9 @@
 				
 				<input type="hidden" name="csrf_token" value="<?php echo htmlentities($csrf_token); ?>"/>
 				
-				<div class="form-group">
-					<div class="col-sm-offset-2 col-sm-10">
-						<button type="submit" name="submit" value="submit" class="btn btn-default">Submit</button>
+				<div class="row gy-2 mb-3">
+					<div class="offset-sm-2 col-sm-10">
+						<button type="submit" name="submit" value="submit" class="btn btn-primary">Submit</button>
 					</div>
 				</div>
 			</form>

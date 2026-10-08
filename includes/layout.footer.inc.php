@@ -4,11 +4,11 @@
 			$datatable_script = <<<FILEDOC
 			
 		<script>
-		$(document).ready( function () {
-			$('#{$datatables_table_id}').DataTable( {
+		document.addEventListener('DOMContentLoaded', function () {
+			new DataTable('#{$datatables_table_id}', {
 				{$datatables_option}
-			} );
-		} );
+			});
+		});
 		</script>
 		
 FILEDOC;

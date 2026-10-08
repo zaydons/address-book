@@ -22,6 +22,7 @@
 			"user" => array(
 				"username" => "Username is a required field. Please enter a username.",
 				"full_name" => "Full name is a required field. Please enter a full name.",
+				"current_password" => "Current password is a required field. Please enter your current password.",
 				"password" => "Password is a required field. Please enter a password.",
 				"confirm_password" => "Confirm password is a required field. Please enter a confirmed password.",
 				
@@ -80,6 +81,7 @@
 		// Password related validations
 		"password" => array (
 			"no_match" => "The passwords you have supplied do not match.",
+			"current_incorrect" => "Your current password is incorrect.",
 			"no_uppercase" => "Your password must contain at least 1 upper case character (A-Z).",
 			"no_lowercase" => "Your password must contain at least 1 lower case character (a-z).",
 			"no_numeric" => "Your password must contain at least 1 lower case character (0-9).",

@@ -34,7 +34,7 @@
 					$errors = array();
 					
 					// Check that the submitted CSRF token is the same as the one in the $_SESSION to prevent cross site request forgery
-					if(!CSRF::check_token($_POST['csrf_token']))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
+					if(!CSRF::check_token($_POST['csrf_token'] ?? null))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
 					
 					// If no errors have been found during the field validations
 					if(empty($errors)) {
@@ -118,12 +118,11 @@
 			<p><strong>This process is <u>IRREVERSIBLE</u>. Once an API token has been deleted there is no way to restore - you will need to create a new API token.</strong></p>
 			<p>Please confirm that you would like to <strong>permanently delete</strong> API token <?php echo $api->token; ?> from the system.</p>
 
-			<form class="form-horizontal" action="" method="post">
+			<form action="" method="post">
 
-				<div class="checkbox">
-					<label>
-						<input type="checkbox" name="confirm_delete"> Yes, I am sure that I want to <strong>permanently delete</strong> API token <?php echo $api->token; ?>
-					</label>
+				<div class="form-check">
+					<input class="form-check-input" type="checkbox" name="confirm_delete" id="confirm_delete">
+					<label class="form-check-label" for="confirm_delete">Yes, I am sure that I want to <strong>permanently delete</strong> API token <?php echo $api->token; ?></label>
 				</div>
 				
 				<input type="hidden" name="csrf_token" value="<?php echo htmlentities($csrf_token); ?>"/>
