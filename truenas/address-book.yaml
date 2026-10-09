@@ -1,30 +1,30 @@
 # Address Book - TrueNAS SCALE custom app
 #
-# In TrueNAS: Apps > Discover Apps > Custom App (the three dots menu) > Install via YAML,
-# give the app a name, and paste this file. See the README for the full steps.
+# 1. Create a dataset for the app's data, such as SSDs/Applications/address-book (Datasets > Add Dataset).
+#    It can be empty - the app sets its permissions when it starts.
+# 2. In TrueNAS: Apps > Discover Apps > Custom App (the three dots menu) > Install via YAML, name the app,
+#    and paste this file after changing:
+#      - the dataset path in "volumes" to the one you created
+#      - SITE_URL to the address you will use to reach the system
+#      - TIMEZONE, such as America/New_York (see https://www.php.net/manual/en/timezones.php)
+# 3. Open the SITE_URL address and log in as admin / LetMeIn123. You will be asked to choose a new password.
 #
-# Before installing, change:
-#   1. SITE_URL to the address you will use to reach the system.
-#   2. TIMEZONE, if you don't want UTC.
-#
-# On the first login you will be asked to change the default admin password (admin / LetMeIn123).
+# The database (address-book.sqlite) and logged-in sessions are kept in the dataset, so they survive app updates
+# and restarts, and are included in snapshots of the dataset. See the README for backups and other settings.
 
 services:
-  app:
-    image: ghcr.io/zaydons/address-book:latest
-    restart: unless-stopped
-    ports:
-      # TrueNAS uses ports 80 and 443 for its own web interface, so the system is on port 8080
-      - "8080:80"
+  address-book:
+    container_name: address-book
     environment:
       SITE_URL: "http://truenas.local:8080/"
-      TIMEZONE: "UTC"
+      TIMEZONE: "America/New_York"
+    # "latest" is the newest version. To stay on a version until you choose to update, use a version tag instead,
+    # such as ghcr.io/zaydons/address-book:1 (the newest 1.x.x) or :1.2.0 (exactly that version)
+    image: ghcr.io/zaydons/address-book:latest
+    ports:
+      # TrueNAS uses ports 80 and 443 for its own web interface. Change the first number to use a different port,
+      # and change SITE_URL to match. The second number must stay 80
+      - "8080:80"
+    restart: unless-stopped
     volumes:
-      # The SQLite database is kept in a Docker volume, which survives app updates and restarts.
-      # To keep it in a dataset instead (for snapshots and backups), create an empty dataset and replace
-      # this line with one like the following. The app sets the directory's ownership when it starts.
-      #   - /mnt/tank/apps/address-book:/data
-      - address-book-data:/data
-
-volumes:
-  address-book-data:
+      - /mnt/SSDs/Applications/address-book:/data
