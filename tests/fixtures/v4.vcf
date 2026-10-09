@@ -1,0 +1,7 @@
+BEGIN:VCARD
+VERSION:4.0
+N:Dickens;Charles;John;;
+FN:Charles John Dickens
+TEL;VALUE=uri;TYPE="cell,voice":tel:+1-212-555-0104
+BDAY:19720207
+END:VCARD

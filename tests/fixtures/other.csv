@@ -1,0 +1,6 @@
+Given Name;Surname;Cell;E-mail Address;Birthday;City;State;Zip
+Mary;Shelley;+1 212 555 0105;mary@example.com;1997-08-30;London;;SW1W 9HS
+=HYPERLINK("x");Evil;;;;;;
+Bad;Date;555-0106;;30/08/1997;;;
+;;;;;;;
+Only;Phone;call me;;;;;

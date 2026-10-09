@@ -3,3 +3,6 @@ includes/settings.local.inc.php
 
 # SQLite database
 data/
+
+# Test tools
+tests/ui/node_modules/
