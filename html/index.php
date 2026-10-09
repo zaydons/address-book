@@ -49,7 +49,7 @@
 				?>
 					<tr>
 						<td><?php echo htmlentities($contacts->full_name($contact)); ?></td>
-						<td><?php echo htmlentities($contact["address_town"]); ?></td>
+						<td><?php echo htmlentities($contact["address_town"] ?? ""); ?></td>
 						<td><?php if(!empty($contact["contact_number_mobile"])) { echo htmlentities($contacts->format_phone_number($contact["contact_number_mobile"])); } else { echo "NOT SPECIFIED"; }; ?></td>
 						<td><?php if(!empty($contact["contact_email"])) { echo "<a href=\"mailto:" . htmlentities($contact["contact_email"]) . "\">" .  htmlentities($contact["contact_email"]) . "</a>"; } else { echo "NOT SPECIFIED"; }; ?></td>
 						<td><a href="<?php echo PAGELINK_CONTACTSVIEW; ?>?i=<?php echo urlencode($contact["contact_id"]); ?>">View</a></td>
@@ -61,6 +61,14 @@
 				</tbody>
 			</table>
 			<a href="<?php echo PAGELINK_CONTACTSADD; ?>" type="button" class="btn btn-primary">Add Contact</a>
+			<a href="<?php echo PAGELINK_CONTACTSIMPORT; ?>" class="btn btn-outline-secondary"><i class="fa fa-upload" aria-hidden="true"></i> Import</a>
+			<div class="btn-group">
+				<button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-download" aria-hidden="true"></i> Export</button>
+				<ul class="dropdown-menu">
+					<li><a class="dropdown-item" href="<?php echo PAGELINK_CONTACTSEXPORT; ?>?format=csv">CSV (for spreadsheets)</a></li>
+					<li><a class="dropdown-item" href="<?php echo PAGELINK_CONTACTSEXPORT; ?>?format=vcf">vCard (for phones and other address books)</a></li>
+				</ul>
+			</div>
 			<!-- /CONTENT -->
 
 <?php

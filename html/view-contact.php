@@ -11,7 +11,7 @@
 	}; // Close if(!$user->authenticated)
 	
 	// If the value of i in GET exists
-	if($_GET["i"]) {
+	if(!empty($_GET["i"])) {
 		
 		// Find contact in database
 		$contact = new Contact($_GET['i']);
@@ -117,6 +117,7 @@
 			</div>
 			<?php }; ?>
 			
+			<?php if($contact->full_address !== '') { ?>
 			<div class="row">
 				<div class="col-4 col-sm-3">
 					<h3>Address:</h3>
@@ -126,6 +127,7 @@
 					<h3><?php echo $contact->full_address; ?></h3>
 				</div>
 			</div>
+			<?php }; ?>
 			
 			<hr>
 			

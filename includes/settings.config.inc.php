@@ -7,7 +7,7 @@
 	};
 	
 	// Settings which can be set as environment variables
-	foreach(array('DB_PATH', 'SITE_URL', 'TIMEZONE', 'LOGIN_MAX_FAILED_USERNAME', 'LOGIN_MAX_FAILED_IP', 'LOGIN_LOCKOUT_MINUTES') as $setting_name) {
+	foreach(array('DB_PATH', 'SITE_URL', 'TIMEZONE', 'PHONE_FORMAT', 'SESSION_LIFETIME_DAYS', 'LOG_RETENTION_DAYS', 'LOGIN_MAX_FAILED_USERNAME', 'LOGIN_MAX_FAILED_IP', 'LOGIN_LOCKOUT_MINUTES') as $setting_name) {
 		if(!defined($setting_name) && getenv($setting_name) !== false) {
 			define($setting_name, getenv($setting_name));
 		};
@@ -46,6 +46,16 @@
 	// By default this is in the data/ directory, which is outside of the html/ directory so that it can't be downloaded
 	defined("DB_PATH")								?	null	:	define("DB_PATH", dirname(__DIR__) . "/data/address-book.sqlite");
 
+	// How phone numbers are shown: "us" for (212) 555-1234, "uk" for 01234 567890, or "none" to show them as stored
+	// This can be overridden in settings.local.inc.php or as an environment variable
+	defined("PHONE_FORMAT")							?	null	:	define("PHONE_FORMAT", "us");
+
+	// How many days users stay logged in. Each visit starts the count again, so regular users stay logged in. 0 logs users out when the browser is closed
+	defined("SESSION_LIFETIME_DAYS")				?	null	:	define("SESSION_LIFETIME_DAYS", 365);
+	
+	// How many days log entries are kept for. Older entries are removed automatically. 0 keeps them forever
+	defined("LOG_RETENTION_DAYS")					?	null	:	define("LOG_RETENTION_DAYS", 90);
+
 	// Limits on failed logins, to slow down attempts to guess passwords
 	// These can be overridden in settings.local.inc.php
 	// Number of failed logins allowed for a single username within the window before further attempts are blocked
@@ -66,6 +76,7 @@
 	defined("PAGENAME_LOGS")						?	null	:	define("PAGENAME_LOGS", "Logs");
 	defined("PAGENAME_CONTACTS")					?	null	:	define("PAGENAME_CONTACTS", "Contacts");
 	defined("PAGENAME_CONTACTSADD")					?	null	:	define("PAGENAME_CONTACTSADD", "Add Contact");
+	defined("PAGENAME_CONTACTSIMPORT")				?	null	:	define("PAGENAME_CONTACTSIMPORT", "Import Contacts");
 	defined("PAGENAME_CONTACTSDELETE")				?	null	:	define("PAGENAME_CONTACTSDELETE", "Delete Contact");
 	defined("PAGENAME_CONTACTSUPDATE")				?	null	:	define("PAGENAME_CONTACTSUPDATE", "Update Contact");
 	defined("PAGENAME_CONTACTSVIEW")				?	null	:	define("PAGENAME_CONTACTSVIEW", "View Contact");
@@ -84,6 +95,8 @@
 	defined("PAGELINK_USERSUPDATE")					?	null	:	define("PAGELINK_USERSUPDATE", "update-user.php");
 	defined("PAGELINK_LOGS")						?	null	:	define("PAGELINK_LOGS", "logs.php");
 	defined("PAGELINK_CONTACTSADD")					?	null	:	define("PAGELINK_CONTACTSADD", "add-contact.php");
+	defined("PAGELINK_CONTACTSIMPORT")				?	null	:	define("PAGELINK_CONTACTSIMPORT", "import.php");
+	defined("PAGELINK_CONTACTSEXPORT")				?	null	:	define("PAGELINK_CONTACTSEXPORT", "export.php");
 	defined("PAGELINK_CONTACTSDELETE")				?	null	:	define("PAGELINK_CONTACTSDELETE", "delete-contact.php");
 	defined("PAGELINK_CONTACTSUPDATE")				?	null	:	define("PAGELINK_CONTACTSUPDATE", "update-contact.php");
 	defined("PAGELINK_CONTACTSVIEW")				?	null	:	define("PAGELINK_CONTACTSVIEW", "view-contact.php");
@@ -133,7 +146,8 @@
 	require_once("alerts.validation.inc.php");
 	
 	// Begin running the Session as items in constructor are required for the system to function correctly
-	$session = new Session();
+	// API calls (see api.php) don't use a saved session, so that each call doesn't leave a session file behind
+	$session = new Session(defined('STATELESS_REQUEST') && STATELESS_REQUEST);
 	
 	// Begin a new User instance as will automatically check details of the user if they are logged in etc
 	$user = new User();

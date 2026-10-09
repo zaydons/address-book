@@ -1,20 +1,50 @@
 <?php
 	class Session {
 		// Constructor
-		public function __construct() {
+		// A stateless session (such as for an API call, which authenticates with a token) isn't saved and sets no cookie
+		public function __construct($stateless = false) {
+			if($stateless) {
+				$_SESSION = array();
+				$this->obtain_user_details();
+				return;
+			}
+			
 			// Only accept session IDs which were issued by this server, and only from cookies (never the URL)
 			ini_set('session.use_strict_mode', '1');
 			ini_set('session.use_only_cookies', '1');
+			// How long users stay logged in, in seconds - 0 means until the browser is closed
+			$lifetime = max(0, (int) SESSION_LIFETIME_DAYS) * 86400;
+			// Keep sessions on the server for as long as the cookie lasts (PHP's default removes them after 24 minutes without use)
+			ini_set('session.gc_maxlifetime', (string) max($lifetime, 1440));
+			// Keep sessions next to the database, so that restarting or updating the system doesn't log everyone out
+			$session_directory = dirname(DB_PATH) . '/sessions';
+			if(!is_dir($session_directory)) {
+				@mkdir($session_directory, 0700, true);
+			}
+			if(is_dir($session_directory) && is_writable($session_directory)) {
+				session_save_path($session_directory);
+			}
 			// Harden the session cookie
-			session_set_cookie_params(array(
-				'lifetime' => 0, // Expire when the browser is closed
+			$cookie = array(
+				'lifetime' => $lifetime,
 				'path' => '/',
 				'secure' => $this->is_https(), // Only send the cookie over HTTPS when the site is served over HTTPS
 				'httponly' => true, // Stop JavaScript reading the cookie
 				'samesite' => 'Lax' // Stop the cookie being sent with requests made by other sites
-			));
+			);
+			session_set_cookie_params($cookie);
 			// Start the session
 			session_start();
+			// Move the cookie's expiry forward on every visit, so that users who keep using the system stay logged in
+			if($lifetime > 0 && !headers_sent()) {
+				setcookie(session_name(), session_id(), array(
+					'expires' => time() + $lifetime,
+					'path' => $cookie['path'],
+					'secure' => $cookie['secure'],
+					'httponly' => $cookie['httponly'],
+					'samesite' => $cookie['samesite'],
+				));
+			}
 			// Log the users details
 			$this->obtain_user_details();
 		}

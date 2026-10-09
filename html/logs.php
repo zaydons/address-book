@@ -14,14 +14,14 @@
 	$datatables_required = 1;
 	// Table ID to relate to the datatable, as identified in the <table> and in the <script>, needed to identify which tables to make into datatables
 	$datatables_table_id = "logs";
-	// Set the datatable option to order the first column in a descending order
-	$datatables_option = '"order": [[ 0, "desc" ]]';
+	// Load the log entries a page at a time from logs-data.php, newest first, rather than all at once
+	$datatables_option = '"serverSide": true, "processing": true, "ajax": "logs-data.php", "order": [[ 0, "desc" ]], "searchDelay": 400';
 	
 	// Create new Log instance, and log the page view to the database
 	$log = new Log('view');
 	
-	// Obtain all logs, using only the required fields, which will be used to populate the table
-	$logs = $log->find_all();
+	// Remove log entries older than LOG_RETENTION_DAYS days
+	$log->remove_old();
 	
 	// Require head content in the page
 	require_once("../includes/layout.head.inc.php");
@@ -42,20 +42,7 @@
 					</tr>
 				</thead>
 				<tbody>
-<?php
-				// Cycle through each item obtained from $log->find_all() and display them in the DataTable
-				foreach($logs as $log){
-				?>
-					<tr>
-						<td><?php echo htmlentities($log["datetime"]); ?></td>
-						<td><?php echo htmlentities($log["action"]); ?></td>
-						<td><?php echo htmlentities($log["user"]); ?></td>
-						<td><?php echo htmlentities($log["ip"]); ?></td>
-					</tr>
-<?php
-				// Closing the foreach loop once final item in $logs has been displayed
-				};
-					?>
+					<!-- Filled in by DataTables from logs-data.php -->
 				</tbody>
 			</table>
 			<!-- /CONTENT -->

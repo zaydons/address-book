@@ -18,70 +18,20 @@
 	// If submit button has been pressed then process the form
 	if(isset($_POST["submit"]) && $_POST["submit"] == "submit") {
 		
-		// Validate all fields and ensure that required fields are submitted
-		
-		// Initialise the $errors are where errors will be sent and then retrieved from
+		// Initialise the $errors array where errors will be sent and then retrieved from
 		$errors = array();
 		
-		// Required fields, if a field is not present or empty then populate the $errors array
-		if(!isset($_POST["first_name"]) 		|| empty($_POST["first_name"])) 		{ $errors[] = $validation["field_required"]["contact"]["first_name"]; };
-		if(!isset($_POST["last_name"]) 			|| empty($_POST["last_name"])) 			{ $errors[] = $validation["field_required"]["contact"]["last_name"]; };
-		if(!isset($_POST["address_line_1"]) 	|| empty($_POST["address_line_1"])) 	{ $errors[] = $validation["field_required"]["contact"]["address_line_1"]; };
-		if(!isset($_POST["address_town"]) 		|| empty($_POST["address_town"])) 		{ $errors[] = $validation["field_required"]["contact"]["address_town"]; };
-		if(!isset($_POST["address_county"]) 	|| empty($_POST["address_county"])) 	{ $errors[] = $validation["field_required"]["contact"]["address_county"]; };
-		if(!isset($_POST["address_post_code"]) 	|| empty($_POST["address_post_code"])) 	{ $errors[] = $validation["field_required"]["contact"]["address_post_code"]; };
-		
 		// Check that the submitted CSRF token is the same as the one in the $_SESSION to prevent cross site request forgery
-		if(!CSRF::check_token($_POST['csrf_token'] ?? null))									{ $errors[] = $validation['invalid']['security']['csrf_token']; };
+		if(!CSRF::check_token($_POST['csrf_token'] ?? null))							{ $errors[] = $validation['invalid']['security']['csrf_token']; };
 		
-		// Length of fields
-		$length_first_name = 		strlen($_POST["first_name"] ?? "");
-		$length_middle_name = 		strlen($_POST["middle_name"] ?? "");
-		$length_last_name = 		strlen($_POST["last_name"] ?? "");
-		$length_home_number = 		strlen($_POST["contact_number_home"] ?? "");
-		$length_mobile_number = 	strlen($_POST["contact_number_mobile"] ?? "");
-		$length_contact_email = 	strlen($_POST["contact_email"] ?? "");
-		$length_address_line_1 =	strlen($_POST["address_line_1"] ?? "");
-		$length_address_line_2 = 	strlen($_POST["address_line_2"] ?? "");
-		$length_address_town = 		strlen($_POST["address_town"] ?? "");
-		$length_address_county = 	strlen($_POST["address_county"] ?? "");
-		$length_address_post_code = strlen($_POST["address_post_code"] ?? "");
-		
-		// Name fields musn't be longer than length in the database, if they are then populate the $errors array
-		if($length_first_name > 50) 		{ $errors[] = $validation["too_long"]["contact"]["first_name"]; }; 
-		if($length_middle_name > 50) 		{ $errors[] = $validation["too_long"]["contact"]["middle_name"]; }; 
-		if($length_last_name > 50) 			{ $errors[] = $validation["too_long"]["contact"]["last_name"]; }; 
-		if($length_home_number > 20) 		{ $errors[] = $validation["too_long"]["contact"]["contact_number_home"]; }; 
-		if($length_mobile_number > 20) 		{ $errors[] = $validation["too_long"]["contact"]["contact_number_mobile"]; }; 
-		if($length_contact_email > 100) 	{ $errors[] = $validation["too_long"]["contact"]["contact_email"]; }; 
-		if($length_address_line_1 > 100) 	{ $errors[] = $validation["too_long"]["contact"]["address_line_1"]; }; 
-		if($length_address_line_2 > 100) 	{ $errors[] = $validation["too_long"]["contact"]["address_line_2"]; }; 
-		if($length_address_town > 100) 		{ $errors[] = $validation["too_long"]["contact"]["address_town"]; }; 
-		if($length_address_county > 100) 	{ $errors[] = $validation["too_long"]["contact"]["address_county"]; }; 
-		if($length_address_post_code > 20) 	{ $errors[] = $validation["too_long"]["contact"]["address_post_code"]; }; 
+		// Check and tidy the submitted fields, such as required fields, lengths and phone number formats
+		$fields = Contact::clean_input($_POST, $errors);
 		
 		// If no errors have been found during the field validations
 		if(empty($errors)) {
 			
 			// Initialise a new Contact object
 			$contact = new Contact();
-			
-			// Prepare an array to be used to insert into the database
-			$fields = array();
-			
-			// Populate the $fields array with values where applicable
-			!empty($_POST['first_name']) 				? $fields['first_name'] = $_POST['first_name']														: $fields['first_name'] = null;
-			!empty($_POST['middle_name']) 				? $fields['middle_name'] = $_POST['middle_name'] 													: $fields['middle_name'] = null;
-			!empty($_POST['last_name']) 				? $fields['last_name'] = $_POST['last_name'] 														: $fields['last_name'] = null;
-			!empty($_POST['contact_number_home']) 		? $fields['contact_number_home'] = $contact->remove_white_space($_POST['contact_number_home']) 		: $fields['contact_number_home'] = null;
-			!empty($_POST['contact_number_mobile']) 	? $fields['contact_number_mobile'] = $contact->remove_white_space($_POST['contact_number_mobile'])	: $fields['contact_number_mobile'] = null;
-			!empty($_POST['contact_email']) 			? $fields['contact_email'] = $_POST['contact_email'] 												: $fields['contact_email'] = null;
-			!empty($_POST['date_of_birth']) 			? $fields['date_of_birth'] = $_POST['date_of_birth'] 												: $fields['date_of_birth'] = null;
-			!empty($_POST['address_line_1']) 			? $fields['address_line_1'] =  $_POST['address_line_1'] 											: $fields['address_line_1'] = null;
-			!empty($_POST['address_line_2']) 			? $fields['address_line_2'] = $_POST['address_line_2'] 												: $fields['address_line_2'] = null;
-			!empty($_POST['address_town']) 				? $fields['address_town'] = $_POST['address_town']													: $fields['address_town'] = null;
-			!empty($_POST['address_county']) 			? $fields['address_county'] = $_POST['address_county']												: $fields['address_county'] = null;
-			!empty($_POST['address_post_code']) 		? $fields['address_post_code'] = $_POST['address_post_code'] 										: $fields['address_post_code'] = null;
 			
 			// Create the new contact, inserting the fields from the $fields array
 			$result = $contact->create($fields);
@@ -90,7 +40,7 @@
 				// Contact successfully added to the database
 				// Log action of add entry success, with contact added 
 				// Create new Log instance, and log the action to the database
-				$log = new Log('contact_add_success', 'Contact of ' . $fields['first_name'] . ' ' . $fields['last_name'] . ' from ' . $fields['address_town'] . ' successfully created.');
+				$log = new Log('contact_add_success', 'Contact of ' . $contact->full_name($fields) . ' successfully created.');
 				// Add session message
 				$session->message_alert($notification["contact"]["add"]["success"], "success");
 				// Redirect the user
@@ -141,7 +91,7 @@
 					
 					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Last Name</label>
 					<div class="col-sm-4">
-						<input type="text" class="form-control" name="last_name" placeholder="Last Name" maxlength="50" <?php if(isset($_POST["last_name"])){ echo "value=\"" . htmlentities($_POST["last_name"]) . "\""; }; ?> required>
+						<input type="text" class="form-control" name="last_name" placeholder="Last Name" maxlength="50" <?php if(isset($_POST["last_name"])){ echo "value=\"" . htmlentities($_POST["last_name"]) . "\""; }; ?>>
 					</div>
 				</div>
 				
@@ -150,12 +100,12 @@
 				<div class="row gy-2 mb-3">
 					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Contact Number Home</label>
 					<div class="col-sm-4">
-						<input type="number" class="form-control" name="contact_number_home" placeholder="Contact Number Home" maxlength="20" <?php if(isset($_POST["contact_number_home"])){ echo "value=\"" . htmlentities($_POST["contact_number_home"]) . "\""; }; ?>>
+						<input type="tel" inputmode="tel" autocomplete="tel" class="form-control" name="contact_number_home" placeholder="Contact Number Home" maxlength="25" <?php if(isset($_POST["contact_number_home"])){ echo "value=\"" . htmlentities($_POST["contact_number_home"]) . "\""; }; ?>>
 					</div>
 					
 					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Contact Number Mobile</label>
 					<div class="col-sm-4">
-						<input type="number" class="form-control" name="contact_number_mobile" placeholder="Contact Number Mobile" maxlength="20" <?php if(isset($_POST["contact_number_mobile"])){ echo "value=\"" . htmlentities($_POST["contact_number_mobile"]) . "\""; }; ?>>
+						<input type="tel" inputmode="tel" autocomplete="tel" class="form-control" name="contact_number_mobile" placeholder="Contact Number Mobile" maxlength="25" <?php if(isset($_POST["contact_number_mobile"])){ echo "value=\"" . htmlentities($_POST["contact_number_mobile"]) . "\""; }; ?>>
 					</div>
 				</div>
 				
@@ -176,7 +126,7 @@
 				<div class="row gy-2 mb-3">
 					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Address Line 1</label>
 					<div class="col-sm-4">
-						<input type="text" class="form-control" name="address_line_1" placeholder="Address Line 1" maxlength="100" <?php if(isset($_POST["address_line_1"])){ echo "value=\"" . htmlentities($_POST["address_line_1"]) . "\""; }; ?> required>
+						<input type="text" class="form-control" name="address_line_1" placeholder="Address Line 1" maxlength="100" <?php if(isset($_POST["address_line_1"])){ echo "value=\"" . htmlentities($_POST["address_line_1"]) . "\""; }; ?>>
 					</div>
 					
 					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Address Line 2</label>
@@ -186,17 +136,17 @@
 					
 					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Address Town</label>
 					<div class="col-sm-4">
-						<input type="text" class="form-control" name="address_town" placeholder="Address Town" maxlength="100" <?php if(isset($_POST["address_town"])){ echo "value=\"" . htmlentities($_POST["address_town"]) . "\""; }; ?> required>
+						<input type="text" class="form-control" name="address_town" placeholder="Address Town" maxlength="100" <?php if(isset($_POST["address_town"])){ echo "value=\"" . htmlentities($_POST["address_town"]) . "\""; }; ?>>
 					</div>
 					
 					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Address County</label>
 					<div class="col-sm-4">
-						<input type="text" class="form-control" name="address_county" placeholder="Address County" maxlength="100" <?php if(isset($_POST["address_county"])){ echo "value=\"" . htmlentities($_POST["address_county"]) . "\""; }; ?> required>
+						<input type="text" class="form-control" name="address_county" placeholder="Address County" maxlength="100" <?php if(isset($_POST["address_county"])){ echo "value=\"" . htmlentities($_POST["address_county"]) . "\""; }; ?>>
 					</div>
 					
 					<label class="col-sm-2 col-form-label text-sm-end fw-bold">Address Postcode</label>
 					<div class="col-sm-4">
-						<input type="text" class="form-control" name="address_post_code" placeholder="Address Postcode" maxlength="20" <?php if(isset($_POST["address_post_code"])){ echo "value=\"" . htmlentities($_POST["address_post_code"]) . "\""; }; ?> required>
+						<input type="text" class="form-control" name="address_post_code" placeholder="Address Postcode" maxlength="20" <?php if(isset($_POST["address_post_code"])){ echo "value=\"" . htmlentities($_POST["address_post_code"]) . "\""; }; ?>>
 					</div>
 				</div>
 				

@@ -16,10 +16,49 @@
 			}
 		}
 		
-		// Find all logs from the database
-		public function find_all() {
-			// Return all 
-			return $this->db->query('SELECT * FROM logs', PDO::FETCH_ASSOC);
+		// The columns of the logs table which can be shown, searched and sorted, in the order shown on the Logs page
+		const COLUMNS = array('datetime', 'action', 'user', 'ip');
+		
+		// Find one page of log entries, for the Logs page
+		// $search is text to look for in any column, $order_column is an index of COLUMNS
+		// Returns the total number of entries, the number matching the search, and the entries on this page
+		public function find_page($start, $length, $search = '', $order_column = 0, $order_descending = true) {
+			$where = '';
+			$parameters = array();
+			if($search !== '') {
+				// Match the search text anywhere in any column, treating % and _ as ordinary characters
+				$where = ' WHERE ' . implode(' OR ', array_map(function($column) { return $column . " LIKE :search ESCAPE '\\'"; }, self::COLUMNS));
+				$parameters[':search'] = '%' . addcslashes($search, '%_\\') . '%';
+			}
+			$order = self::COLUMNS[$order_column] ?? 'datetime';
+			$direction = $order_descending ? 'DESC' : 'ASC';
+			
+			$total = (int) $this->db->query('SELECT COUNT(*) FROM logs')->fetchColumn();
+			$count = $this->db->prepare('SELECT COUNT(*) FROM logs' . $where);
+			$count->execute($parameters);
+			$filtered = (int) $count->fetchColumn();
+			
+			// Entries logged in the same second are shown in the order they were logged
+			$rows = $this->db->prepare('SELECT ' . implode(', ', self::COLUMNS) . ' FROM logs' . $where . ' ORDER BY ' . $order . ' ' . $direction . ', log_id ' . $direction . ' LIMIT :limit OFFSET :offset');
+			foreach($parameters as $name => $value) {
+				$rows->bindValue($name, $value);
+			}
+			$rows->bindValue(':limit', $length, PDO::PARAM_INT);
+			$rows->bindValue(':offset', $start, PDO::PARAM_INT);
+			$rows->execute();
+			
+			return array('total' => $total, 'filtered' => $filtered, 'rows' => $rows->fetchAll(PDO::FETCH_NUM));
+		}
+		
+		// Remove log entries older than LOG_RETENTION_DAYS days
+		public function remove_old() {
+			$days = (int) LOG_RETENTION_DAYS;
+			if($days <= 0) {
+				return 0;
+			}
+			$delete = $this->db->prepare('DELETE FROM logs WHERE datetime < :cutoff');
+			$delete->execute(array(':cutoff' => date('Y-m-d H:i:s', time() - $days * 86400)));
+			return $delete->rowCount();
 		}
 		
 		// Count the failed logins since a given time, either from an IP address or for a username
@@ -90,6 +129,11 @@
 			
 			// Execute the prepared statement
 			$result = $stmt->execute();
+			
+			// Every so often, remove old log entries so that the logs don't grow forever
+			if(random_int(1, 100) === 1) {
+				$this->remove_old();
+			}
 			
 			// Check if successful
 			if($result) {
@@ -200,6 +244,18 @@
 					} elseif($additional_message) {
 						$action .= ': ' . $additional_message;
 					}
+					break;
+				case 'contacts_import' :
+					$action = 'Contacts Imported';
+					if($additional_message) {
+						$action .= ': ' . $additional_message;
+					};
+					break;
+				case 'contacts_export' :
+					$action = 'Contacts Exported';
+					if($additional_message) {
+						$action .= ': ' . $additional_message;
+					};
 					break;
 				case 'contact_add_success' :
 					$action = 'Contact Add Success';
