@@ -1,6 +1,5 @@
 """The SQLite database: concurrent use, safety, upgrades from older versions, and keeping data when the container is replaced."""
 import os
-import re
 import subprocess
 import tempfile
 import time
@@ -9,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 import requests
 
-from conftest import APP_CONTAINER, IMAGE, login, sql, sql_value, token, unique, url
+from conftest import APP_CONTAINER, IMAGE, sql_value, token, unique, url
 
 
 def docker(*args, check=True):
@@ -61,7 +60,7 @@ def test_database_is_healthy_and_in_wal_mode(admin):
 
 
 @pytest.mark.parametrize("path", ["data/address-book.sqlite", "../data/address-book.sqlite", "address-book.sqlite",
-                                  "..%2Fdata%2Faddress-book.sqlite", "sql/sql.sql", "../includes/settings.config.inc.php", "../tools/mysql-to-sqlite.php"])
+                                  "..%2Fdata%2Faddress-book.sqlite", "sql/schema.sql", "../includes/settings.config.inc.php"])
 def test_files_outside_the_web_folder_cannot_be_downloaded(path):
     response = requests.get(url(path))
     assert response.status_code in (400, 403, 404) and "SQLite format" not in response.text
@@ -76,7 +75,7 @@ def test_upgrade_from_a_110_database_and_data_is_kept_when_the_container_is_repl
         # Create a 1.1.0 database: the original structure, without the logs_datetime index, with old-style phone numbers
         create = (
             '$d = new PDO("sqlite:/data/address-book.sqlite");'
-            '$sql = file_get_contents("/var/www/address-book/sql/sql.sql");'
+            '$sql = file_get_contents("/var/www/address-book/sql/schema.sql");'
             '$sql = preg_replace("/CREATE INDEX IF NOT EXISTS logs_datetime[^;]*;/", "", $sql);'
             '$d->exec($sql);'
             '$d->exec("INSERT INTO contacts (contact_id, first_name, contact_number_home, contact_number_mobile) VALUES (\'old000000001\', \'Old\', \'01234 567890\', \'+1 212-555-0123\')");'
@@ -126,58 +125,3 @@ def test_a_directory_owned_by_root_is_made_writable():
         docker("run", "--rm", "-v", directory + ":/data", "--entrypoint", "sh", IMAGE, "-c",
                "rm -rf /data/* && chown %d:%d /data" % (os.getuid(), os.getgid()), check=False)
         os.rmdir(directory)
-
-
-MYSQL_IMAGE = os.environ.get("MYSQL_IMAGE")
-
-
-@pytest.mark.skipif(not MYSQL_IMAGE, reason="set MYSQL_IMAGE (such as mysql:9) to test copying data from MySQL")
-@pytest.mark.parametrize("schema,charset,options", [
-    ("tests/fixtures/mysql-1.0.6.sql", "utf8mb4", []),
-    ("tests/fixtures/mysql-1.0.6.sql", "latin1", ["--charset=latin1"]),
-])
-def test_copying_a_mysql_database(schema, charset, options):
-    network = unique("ab-test-net-")
-    mysql = unique("ab-test-mysql-")
-    volume = unique("ab-test-data-")
-    docker("network", "create", network)
-    try:
-        docker("run", "-d", "--name", mysql, "--network", network, "-e", "MYSQL_ROOT_PASSWORD=rootpw", MYSQL_IMAGE)
-        for _ in range(90):
-            if docker("exec", mysql, "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootpw", "--silent", check=False).returncode == 0:
-                break
-            time.sleep(2)
-        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        for script, client_charset in [(schema, "utf8mb4"), ("tests/fixtures/mysql-data.sql", charset)]:
-            subprocess.run(["docker", "exec", "-i", mysql, "mysql", "--default-character-set=" + client_charset, "-uroot", "-prootpw"],
-                           stdin=open(os.path.join(root, script), "rb"), check=True, capture_output=True)
-
-        command = ["run", "--rm", "-u", "www-data", "--network", network, "-v", volume + ":/data", IMAGE, "php", "/var/www/address-book/tools/mysql-to-sqlite.php",
-                   "--host=" + mysql, "--user=root", "--password=rootpw", "--database=address_book", "--output=/data/address-book.sqlite", *options]
-        output = docker(*command).stdout
-        assert "contacts  2 rows copied" in output and "users     2 rows copied" in output
-        # Running it again doesn't overwrite the new database
-        assert docker(*command, check=False).returncode == 1
-
-        check = ('$d = new PDO("sqlite:/data/address-book.sqlite");'
-                 'echo bin2hex($d->query("SELECT first_name FROM contacts WHERE last_name LIKE \'Bront%\'")->fetchColumn()), "|",'
-                 '$d->query("SELECT must_change_password FROM users WHERE username = \'admin\'")->fetchColumn(), "|",'
-                 '$d->query("SELECT api_id FROM api")->fetchColumn();')
-        result = docker("run", "--rm", "-u", "www-data", "-v", volume + ":/data", IMAGE, "php", "-r", check).stdout
-        # "Zoë" in UTF-8, the default admin is asked to change its password, and the API token is kept
-        assert result == "5a6fc3ab|1|Pz7Kq2Lm9Xa4"
-
-        # The copied user can log in with their old password
-        port = free_port()
-        name = start_app(volume, port)
-        try:
-            session = requests.Session()
-            page = session.get("http://127.0.0.1:%d/login.php" % port)
-            response = session.post("http://127.0.0.1:%d/login.php" % port, data={"username": "jsmith", "password": "Custom1234x", "csrf_token": token(page.text), "submit": "submit"})
-            assert response.url.endswith("index.php")
-        finally:
-            docker("rm", "-f", name, check=False)
-    finally:
-        docker("rm", "-f", mysql, check=False)
-        docker("volume", "rm", volume, check=False)
-        docker("network", "rm", network, check=False)

@@ -1,5 +1,13 @@
 # Address Book Changelog
 
+## 1.3.0 (Unreleased)
+
+- Icons are included in the pages instead of loading the Font Awesome icon font.
+- Removed `tools/mysql-to-sqlite.php`, which copied data from the MySQL versions before 1.1.0. The image no longer includes MySQL support.
+- The database structure file is now `sql/schema.sql`.
+- New screenshots, including dark mode and phones, which `tests/screenshots.sh` takes again when needed.
+- Images are no longer published with `sha-` tags, and a weekly workflow deletes old untagged images and earlier `sha-` tags from the registry.
+
 ## 1.2.0 (2026-10-10)
 
 - Added importing contacts from vCard (`.vcf`) files, such as from a phone, Google Contacts or iCloud, and from CSV files, and exporting contacts as CSV or vCard files. Contacts already in the address book are skipped, and any which can't be added are listed with the reason.
@@ -16,10 +24,10 @@
 
 ## 1.1.0 (2026-10-08)
 
-The system now stores its data in SQLite instead of MySQL/MariaDB, and includes security fixes. Existing installations should copy their data with [tools/mysql-to-sqlite.php](tools/mysql-to-sqlite.php), see the README.
+The system now stores its data in SQLite instead of MySQL/MariaDB, and includes security fixes.
 
 - Data is stored in a single SQLite database file instead of a MySQL/MariaDB server. The file and its tables are created automatically on first use. The `DB_SERVER`, `DB_USER`, `DB_PASS` and `DB_NAME` settings are replaced by `DB_PATH`, which is optional.
-- Added [tools/mysql-to-sqlite.php](tools/mysql-to-sqlite.php) to copy an existing MySQL database into SQLite.
+- Added `tools/mysql-to-sqlite.php` to copy an existing MySQL database into SQLite (removed in 1.3.0).
 - Usernames are not case sensitive, as before (`Admin` and `admin` are the same user).
 - Random IDs, API tokens and CSRF tokens are generated with a cryptographically secure generator (`random_int()`) instead of `rand()`.
 - Passwords are hashed with `password_hash()` and checked with `password_verify()`. Existing hashes are upgraded automatically when users log in.

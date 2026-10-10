@@ -117,30 +117,6 @@ This writes a complete copy to `backup.sqlite` in the same directory. If the dat
 
 Contacts can also be downloaded as a CSV or vCard file from the **Export** button on the Address Book page (see [Importing and Exporting Contacts](#importing-and-exporting-contacts)). This keeps the contacts, but not users, API tokens or logs.
 
-## Upgrading
-
-### To 1.1.0 (from MySQL to SQLite)
-
-Version 1.1.0 stores its data in SQLite instead of MySQL/MariaDB. To keep your existing data, copy it into a new SQLite database with [tools/mysql-to-sqlite.php](tools/mysql-to-sqlite.php) before using the new version. It copies users (with their passwords), contacts, API tokens and logs, and asks the default `admin` account to choose a new password if it still has the default password. Your MySQL database isn't changed, so keep it until you have checked the new version.
-
-On a manual installation, with the MySQL server still running:
-
-```bash
-php tools/mysql-to-sqlite.php --host=127.0.0.1 --user=root --password=YOUR-PASSWORD --database=address_book --output=data/address-book.sqlite
-chown www-data:www-data data/address-book.sqlite
-```
-
-This needs the `pdo_mysql` PHP module, which you will already have if the system was using MySQL.
-
-With Docker, start the old MySQL container on its own, then run the tool from the new image on the same Docker network (the image includes `pdo_mysql` for this). For example, if the old `docker compose` project was in a directory called `address-book`, its network is `address-book_default` and its database container is `mysql`:
-
-```bash
-docker run --rm -u www-data --network address-book_default -v address-book_address-book-data:/data ghcr.io/zaydons/address-book:latest \
-  php /var/www/address-book/tools/mysql-to-sqlite.php --host=mysql --user=root --password=YOUR-PASSWORD --database=address_book --output=/data/address-book.sqlite
-```
-
-If accented characters (such as é) look wrong after copying, such as `Ã©` instead of `é`, your system was connecting to MySQL as Latin-1. Delete the new file and run the tool again with `--charset=latin1`.
-
 ## Local Settings Configuration Values
 
 There are several configuration values which can be set in the `includes/settings.local.inc.php` file. Each of them can also be set as an environment variable with the same name, which is how the [Docker](#1-docker-recommended) and [TrueNAS](#3-truenas-scale) installations are configured. A value in `settings.local.inc.php` takes priority over an environment variable. Below lists settings with their appropriate values:
@@ -300,6 +276,8 @@ pip install -r tests/requirements.txt
 tests/run.sh
 ```
 
-Set `MYSQL_IMAGE=mysql:9` to also test copying data from MySQL, or `SKIP_UI=1` to skip the browser tests.
+Set `SKIP_UI=1` to skip the browser tests.
+
+`tests/screenshots.sh` takes new screenshots for [SCREENSHOTS.md](SCREENSHOTS.md), of the system with example contacts, in the same way.
 
 Pull requests (PRs) to this repository are welcome. If your PR is to address an open issue, please try to keep your changes specific to only that issue. Also please avoid addressing multiple issues within a single PR.

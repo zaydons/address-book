@@ -421,11 +421,6 @@
 			return $values;
 		}
 
-		public function remove_white_space($string) {
-			// Remove all white space within the string
-			return preg_replace('/\s+/', '', $string ?? '');
-		}
-		
 		// The contact's name, leaving out any parts which are empty
 		public function full_name(array $contact){
 			return implode(' ', array_filter(array($contact['first_name'], $contact['middle_name'], $contact['last_name']), function($part) { return $part !== null && $part !== ''; }));

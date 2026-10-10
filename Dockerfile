@@ -3,10 +3,8 @@
 # Used for deployments such as a TrueNAS custom app, and by docker-compose.yml for development - see the README.
 FROM php:8.5-apache
 
-# PHP's recommended production settings (errors are logged rather than shown on pages)
-# SQLite support is built into PHP. MySQL support is only for tools/mysql-to-sqlite.php, which copies an existing MySQL database.
-RUN docker-php-ext-install pdo_mysql \
-	&& cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+# PHP's recommended production settings (errors are logged rather than shown on pages). SQLite support is built into PHP.
+RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
 	&& printf 'expose_php = Off\n' > "$PHP_INI_DIR/conf.d/address-book.ini"
 
 # Serve the html/ directory, and don't reveal the Apache version (named zz- so it loads after, and overrides, Debian's security.conf)
@@ -19,7 +17,6 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 COPY html /var/www/address-book/html
 COPY includes /var/www/address-book/includes
 COPY sql /var/www/address-book/sql
-COPY tools /var/www/address-book/tools
 
 # The database directory, which the web server user must be able to write to
 RUN mkdir /data && chown www-data:www-data /data

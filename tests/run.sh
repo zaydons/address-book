@@ -9,7 +9,6 @@
 #
 # Optional environment variables:
 #   IMAGE        an image to test instead of building one from this directory
-#   MYSQL_IMAGE  a MySQL image (such as mysql:9) to also test copying data from MySQL with tools/mysql-to-sqlite.php
 #   SKIP_UI=1    skip the browser tests
 #   PYTEST_ARGS  extra arguments for pytest, such as "-k contacts"
 set -euo pipefail

@@ -9,7 +9,6 @@ services:
             - ./html:/var/www/address-book/html
             - ./includes:/var/www/address-book/includes
             - ./sql:/var/www/address-book/sql
-            - ./tools:/var/www/address-book/tools
             - address-book-data:/data
         environment:
             - SITE_URL=http://localhost/

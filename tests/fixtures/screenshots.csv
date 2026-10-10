@@ -1,0 +1,9 @@
+first_name,middle_name,last_name,contact_number_home,contact_number_mobile,contact_email,date_of_birth,address_line_1,address_line_2,address_town,address_county,address_post_code
+Ada,,Lovelace,(212) 555-0142,(917) 555-0187,ada.lovelace@example.com,1985-12-10,12 Analytical Way,,New York,NY,10001
+Alan,Mathison,Turing,,(646) 555-0123,alan.turing@example.com,1982-06-23,44 Enigma Street,Apt 3,Boston,MA,02108
+Grace,Brewster,Hopper,(703) 555-0164,(571) 555-0119,grace.hopper@example.com,1976-12-09,9 Compiler Court,,Arlington,VA,22201
+Katherine,,Johnson,(757) 555-0131,,katherine.johnson@example.com,1988-08-26,300 Orbit Road,,Hampton,VA,23666
+Linus,,Pauling,,(503) 555-0148,linus.pauling@example.com,1971-02-28,8 Bond Avenue,,Portland,OR,97201
+Margaret,Heafield,Hamilton,(617) 555-0172,(857) 555-0109,margaret.hamilton@example.com,1986-08-17,1 Apollo Drive,,Cambridge,MA,02139
+Rosalind,,Franklin,(415) 555-0156,,rosalind.franklin@example.com,1990-07-25,51 Helix Lane,,San Francisco,CA,94103
+Tim,,Berners-Lee,,(202) 555-0177,tim@example.com,1979-06-08,80 Hypertext Place,Suite 200,Washington,DC,20001

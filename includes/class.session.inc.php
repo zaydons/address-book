@@ -55,13 +55,6 @@
 			return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || stripos(SITE_URL, 'https://') === 0;
 		}
 		
-		// Used for testing purposes to output the contents of the $_SESSION array
-		public function debug() {
-			echo '<pre>';
-			print_r($_SESSION);
-			echo '</pre>';
-		}
-		
 		// Set a session key with a value
 		public function set($key, $value) {
 			if(isset($_SESSION[$key]) || !empty($_SESSION[$key])) {

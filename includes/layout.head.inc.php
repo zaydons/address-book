@@ -25,9 +25,6 @@ FILEDOC;
 		};
 ?>
 
-		<!-- Font Awesome -->
-		<link href="assets/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
-
 		<!-- Main CSS -->
 		<link rel="stylesheet" href="css/main.css?v=<?php echo time(); ?>">
 
