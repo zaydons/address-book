@@ -121,7 +121,10 @@ def test_a_directory_owned_by_root_is_made_writable():
     finally:
         if name:
             docker("rm", "-f", name, check=False)
-        docker("run", "--rm", "-v", directory + ":/data", "--entrypoint", "sh", IMAGE, "-c", "rm -rf /data/*", check=False)
+        # The app made the container's web server user the owner, so empty the directory and give it back to the user running
+        # the tests from inside a container (which runs as root), so that it can be removed
+        docker("run", "--rm", "-v", directory + ":/data", "--entrypoint", "sh", IMAGE, "-c",
+               "rm -rf /data/* && chown %d:%d /data" % (os.getuid(), os.getgid()), check=False)
         os.rmdir(directory)
 
 
