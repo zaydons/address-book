@@ -1,6 +1,6 @@
 # Address Book Changelog
 
-## 1.2.0 (Unreleased)
+## 1.2.0 (2026-10-10)
 
 - Added importing contacts from vCard (`.vcf`) files, such as from a phone, Google Contacts or iCloud, and from CSV files, and exporting contacts as CSV or vCard files. Contacts already in the address book are skipped, and any which can't be added are listed with the reason.
 - Phone numbers can be typed in any common format (such as `+1 (212) 555-1234`), are stored as digits, and are shown in US format by default. The `PHONE_FORMAT` setting chooses `us`, `uk` or `none`. Existing phone numbers are converted when the system is updated.

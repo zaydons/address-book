@@ -90,6 +90,8 @@ The image is published with these tags:
 
 To stay on a version until you choose to update, replace `latest` in the `image` line with a version tag. The [CHANGELOG](CHANGELOG.md) lists what each version changes.
 
+New versions are created with the **Release** workflow: in the **Actions** tab on GitHub, choose **Release**, then **Run workflow**, and enter the version number. It creates the GitHub release and tag, with the notes from that version's section of the CHANGELOG, then publishes the image with the version's tags.
+
 For HTTPS, put the system behind a reverse proxy (see [Running Behind a Reverse Proxy](#running-behind-a-reverse-proxy)) and set `SITE_URL` to the `https://` address.
 
 ### Testing
