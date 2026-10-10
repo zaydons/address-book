@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The Address Book page shows each contact's name and full address, instead of their town, mobile number and email address.
 - Added the `addContact` API method, which adds one or more contacts sent as JSON in a POST request, skipping any already in the address book. API calls can send `m` and `q` as POST values.
 - Added `tools/import-spreadsheet.py`, which imports contacts from an Excel (`.xlsx`) spreadsheet, such as one exported from Numbers.
 
