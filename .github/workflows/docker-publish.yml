@@ -1,8 +1,13 @@
-# Builds the image of the system and publishes it to the GitHub Container Registry as ghcr.io/<owner>/address-book,
-# for deployments such as a TrueNAS custom app.
-# Pushes to main are tagged "latest", and version tags (v1.2.3) are tagged "1.2.3" and "1.2".
-# Pull requests build the image to check that it works, but don't publish it.
-name: Docker image
+# Tests the system, then builds its image and publishes it to the GitHub Container Registry as ghcr.io/<owner>/address-book,
+# for deployments such as a TrueNAS custom app. The image is only published if the tests pass.
+#
+# Image tags:
+#   latest              the newest version: every push to main, and every version tag
+#   1.2.3, 1.2 and 1    from a version tag, such as v1.2.3 - use one of these to stay on a version until you choose to update
+#   sha-abc1234         every build, by commit
+#
+# Pull requests run the tests and build the image to check that it works, but don't publish it.
+name: Test and publish
 
 on:
   push:
@@ -13,11 +18,44 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: tests/requirements.txt
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/ui/package-lock.json
+
+      - name: Install the test tools
+        run: |
+          pip install -r tests/requirements.txt
+          cd tests/ui
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run the tests
+        env:
+          # Also test copying data from MySQL with tools/mysql-to-sqlite.php
+          MYSQL_IMAGE: mysql:9
+        run: tests/run.sh
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v5
 
@@ -38,8 +76,10 @@ jobs:
           images: ghcr.io/${{ github.repository_owner }}/address-book
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
             type=sha
             type=ref,event=branch,enable=${{ github.event_name == 'workflow_dispatch' }}
 

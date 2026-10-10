@@ -42,6 +42,9 @@ CREATE TABLE IF NOT EXISTS logs (
 -- Speeds up counting recent failed logins from an IP address
 CREATE INDEX IF NOT EXISTS ip_datetime ON logs (ip, datetime);
 
+-- Speeds up removing old log entries
+CREATE INDEX IF NOT EXISTS logs_datetime ON logs (datetime);
+
 -- Users who can log in to the system
 CREATE TABLE IF NOT EXISTS users (
   user_id TEXT NOT NULL PRIMARY KEY,

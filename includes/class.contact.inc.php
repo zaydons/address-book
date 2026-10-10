@@ -3,6 +3,22 @@
 	class Contact {
 		// Variable to hold a DB instance
 		private $db;
+
+		// The fields of a contact which can be entered, with their maximum lengths
+		const FIELDS = array(
+			'first_name' => 50,
+			'middle_name' => 50,
+			'last_name' => 50,
+			'contact_number_home' => 20,
+			'contact_number_mobile' => 20,
+			'contact_email' => 100,
+			'date_of_birth' => 10,
+			'address_line_1' => 100,
+			'address_line_2' => 100,
+			'address_town' => 100,
+			'address_county' => 100,
+			'address_post_code' => 20,
+		);
 		
 		// All variables for when all contacts are searched
 		public $all = null; // Variable used to hold all contacts
@@ -83,40 +99,55 @@
 		}
 		
 		// Method to find a single contact based on a searched number, listed by alphabetical last name first, then alphabetical first name - used mainly for API call
+		// The number can be in any format, such as +1 (212) 555-1234. Numbers with 10 or more digits also match on their last 10 digits,
+		// so that a number with or without a country code (such as +12125551234 and 2125551234, or +447700900123 and 07700900123) is found
 		public function find_number($number) {
-			// Check if $number has been sent
+			// Convert the number to the form it is stored in
+			$number = self::normalize_phone($number);
 			if($number) {
-				// Begin prepared statement to find single ID in database
+				$digits = preg_replace('/\D/', '', $number);
+				$match_last_ten = strlen($digits) >= 10;
 				$sql = '
-					SELECT first_name, last_name FROM contacts 
-					WHERE contact_number_home = :contact_number_home 
-					OR contact_number_mobile = :contact_number_mobile
-					ORDER BY last_name ASC, first_name ASC
+					SELECT first_name, last_name FROM contacts
+					WHERE contact_number_home = :number
+					OR contact_number_mobile = :number
+				';
+				if($match_last_ten) {
+					$sql .= "
+					OR substr(replace(contact_number_home, '+', ''), -10) = :last_ten
+					OR substr(replace(contact_number_mobile, '+', ''), -10) = :last_ten
+					";
+				}
+				// Prefer an exact match, then alphabetical by last name and first name
+				$sql .= '
+					ORDER BY (contact_number_home = :number OR contact_number_mobile = :number) DESC, last_name ASC, first_name ASC
 				';
 				$stmt = $this->db->prepare($sql);
-				
-				// Pass in the $number into the prepared statement and execute
-				$stmt->bindParam(':contact_number_home', $number);
-				$stmt->bindParam(':contact_number_mobile', $number);
+
+				// Pass in the number into the prepared statement and execute
+				$stmt->bindValue(':number', $number);
+				if($match_last_ten) {
+					$stmt->bindValue(':last_ten', substr($digits, -10));
+				}
 				$stmt->execute();
-				
+
 				// Fetch the results from the prepared statement
 				$result = $stmt->fetch();
-				
+
 				// Check if a contact could be found
 				if($result) {
 					// Return only the first and last name of the contact
-					return $result['first_name'] . ' ' . $result['last_name'];
+					return trim($result['first_name'] . ' ' . $result['last_name']);
 				} else {
 					// Contact not found, return false
 					return false;
 				}
 			} else {
-				// $id not sent, return false
+				// $number not sent, return false
 				return false;
 			}
 		}
-		
+
 		// Method to update a particular contact
 		public function update($values = array()) {
 			// This method will only be called if used from a search of a particular ID during instantiation, such as $contact = new Contact(3298)
@@ -293,40 +324,118 @@
 			return Random::string($token_length);
 		}
 		
+		// Format a stored phone number for display, using the PHONE_FORMAT setting:
+		//   us   - (212) 555-1234, and +1 (212) 555-1234 for numbers with the +1 country code
+		//   uk   - 01234 567890
+		//   none - as stored
+		// Numbers which don't fit the format, such as international numbers, are shown as stored
 		public function format_phone_number($phone_number) {
-			// Remove all white space from the phone number
-			$phone_number = $this->remove_white_space($phone_number);
-			// Insert a space at position 5 in a phone number, formatting as 01234 567890
-			return substr_replace($phone_number, " ", 5, 0);
+			$phone_number = self::normalize_phone($phone_number);
+			if($phone_number === null) {
+				return '';
+			}
+			$digits = preg_replace('/\D/', '', $phone_number);
+			$international = $phone_number[0] === '+';
+
+			switch(strtolower(PHONE_FORMAT)) {
+				case 'us':
+					if(!$international && strlen($digits) == 10) {
+						return '(' . substr($digits, 0, 3) . ') ' . substr($digits, 3, 3) . '-' . substr($digits, 6);
+					}
+					if(strlen($digits) == 11 && $digits[0] === '1') {
+						return '+1 (' . substr($digits, 1, 3) . ') ' . substr($digits, 4, 3) . '-' . substr($digits, 7);
+					}
+					return $phone_number;
+				case 'uk':
+					if(!$international && strlen($digits) == 11 && $digits[0] === '0') {
+						return substr($digits, 0, 5) . ' ' . substr($digits, 5);
+					}
+					return $phone_number;
+				default:
+					return $phone_number;
+			}
 		}
-		
+
+		// Convert a phone number as typed (such as "+1 (212) 555-1234") to the form it is stored in:
+		// digits, with a + at the start for an international number. Returns null if there are no digits
+		public static function normalize_phone($phone_number) {
+			if(!is_string($phone_number)) {
+				return null;
+			}
+			$phone_number = trim($phone_number);
+			$digits = preg_replace('/\D/', '', $phone_number);
+			if($digits === '') {
+				return null;
+			}
+			return ($phone_number[0] === '+' ? '+' : '') . $digits;
+		}
+
+		// Check and tidy the contact fields submitted in a form, or read from an import
+		// Returns an array of every field, with empty fields as null, and adds any problems to $errors
+		public static function clean_input(array $input, array &$errors) {
+			global $validation;
+			$values = array();
+
+			foreach(self::FIELDS as $field => $max_length) {
+				$value = isset($input[$field]) && is_string($input[$field]) ? trim($input[$field]) : '';
+
+				if($value === '') {
+					$values[$field] = null;
+					continue;
+				}
+
+				switch($field) {
+					case 'contact_number_home':
+					case 'contact_number_mobile':
+						// Digits, spaces and ( ) - . / are allowed, with an optional + at the start
+						if(!preg_match('~^\+?[0-9\s().\-/]+$~', $value) || !preg_match('/\d/', $value)) {
+							$errors[] = $validation['invalid']['format'][$field];
+						}
+						$value = self::normalize_phone($value);
+						break;
+					case 'contact_email':
+						if(filter_var($value, FILTER_VALIDATE_EMAIL) === false) {
+							$errors[] = $validation['invalid']['format']['contact_email'];
+						}
+						break;
+					case 'date_of_birth':
+						// YYYY-MM-DD, as sent by the date picker
+						$date = DateTime::createFromFormat('!Y-m-d', $value);
+						if(!$date || $date->format('Y-m-d') !== $value) {
+							$errors[] = $validation['invalid']['format']['date_of_birth'];
+						}
+						break;
+				}
+
+				if($value !== null && mb_strlen($value) > $max_length && isset($validation['too_long']['contact'][$field])) {
+					$errors[] = $validation['too_long']['contact'][$field];
+				}
+				$values[$field] = $value;
+			}
+
+			// A contact needs a first name
+			if($values['first_name'] === null) {
+				$errors[] = $validation['field_required']['contact']['first_name'];
+			}
+
+			return $values;
+		}
+
 		public function remove_white_space($string) {
 			// Remove all white space within the string
 			return preg_replace('/\s+/', '', $string ?? '');
 		}
 		
+		// The contact's name, leaving out any parts which are empty
 		public function full_name(array $contact){
-			// If the person has a middle name
-			if($contact['middle_name'] != null ) {
-				// Create their name with a middle name
-				return $contact['first_name'] . " " . $contact['middle_name'] . " " . $contact['last_name'];
-			} else {
-				// Don't include the middle name
-				return $contact['first_name'] . " " . $contact['last_name'];
-			}
+			return implode(' ', array_filter(array($contact['first_name'], $contact['middle_name'], $contact['last_name']), function($part) { return $part !== null && $part !== ''; }));
 		}
-		
+
+		// The contact's address on one line, leaving out any parts which are empty
 		private function full_address(array $contact) {
-			// If the address has a value in address line 2
-			if($contact['address_line_2'] != null) {
-				// Create the address with the line 2 value
-				return $contact['address_line_1'] . ", " . $contact['address_line_2'] . ", " . $contact['address_town'] . ", " . $contact['address_county'] . ", " . $contact['address_post_code'];
-			} else {
-				// Don't include the line 2 value
-				return $contact['address_line_1'] . ", " . $contact['address_town'] . ", " . $contact['address_county'] . ", " . $contact['address_post_code'];
-			}
+			return implode(', ', array_filter(array($contact['address_line_1'], $contact['address_line_2'], $contact['address_town'], $contact['address_county'], $contact['address_post_code']), function($part) { return $part !== null && $part !== ''; }));
 		}
-		
+
 		private function cosmetic_date($database_date = null) {
 			if($database_date) {
 				// Convert the database date (YYYY-MM-DD) to a UNIX time stamp

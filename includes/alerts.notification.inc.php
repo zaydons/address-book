@@ -93,6 +93,13 @@
 				"not_found" => "The contact you are trying to delete could not be found. Please check and try again."
 			),
 			
+			// Importing contacts from a file
+			"import" => array (
+				"no_file" => "Please choose a CSV or vCard (.vcf) file to import.",
+				"too_large" => "The file is too large to upload.",
+				"failure" => "The file could not be imported.",
+			),
+			
 			// Viewing contacts in the address book
 			"view" => array (
 				"not_found" => "The contact you are searching for could not be found. Please check and try again. If you continue to see this message please contact a system administrator."

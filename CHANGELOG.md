@@ -1,6 +1,20 @@
 # Address Book Changelog
 
-## 1.1.0 (Unreleased)
+## 1.2.0 (Unreleased)
+
+- Added importing contacts from vCard (`.vcf`) files, such as from a phone, Google Contacts or iCloud, and from CSV files, and exporting contacts as CSV or vCard files. Contacts already in the address book are skipped, and any which can't be added are listed with the reason.
+- Phone numbers can be typed in any common format (such as `+1 (212) 555-1234`), are stored as digits, and are shown in US format by default. The `PHONE_FORMAT` setting chooses `us`, `uk` or `none`. Existing phone numbers are converted when the system is updated.
+- The API's `findNumber` method finds numbers in any format, with or without a country code.
+- Users stay logged in: logins last `SESSION_LIFETIME_DAYS` (365 by default) from the last visit, and are kept next to the database so that restarting or updating the system doesn't log users out. API calls no longer create sessions.
+- Log entries older than `LOG_RETENTION_DAYS` (90 by default) are removed automatically, and the Logs page loads entries a page at a time, so it stays fast as the logs grow.
+- Only a contact's first name is needed, so that contacts without an address (such as imported ones) can be added and updated.
+- Fixed clearing the first name of a contact clearing its middle name instead, and fixed optional fields (such as phone numbers and email addresses) not being cleared when emptied in the update contact form.
+- The database records its version and upgrades itself when the system is updated.
+- Added automated tests (see the README), which run on every pull request and before each image is published.
+- The image is also published with version tags (such as `1.2.0`, `1.2` and `1`) as well as `latest`.
+- The TrueNAS YAML file keeps the database in a dataset, so that it is included in snapshots.
+
+## 1.1.0 (2026-10-08)
 
 The system now stores its data in SQLite instead of MySQL/MariaDB, and includes security fixes. Existing installations should copy their data with [tools/mysql-to-sqlite.php](tools/mysql-to-sqlite.php), see the README.
 

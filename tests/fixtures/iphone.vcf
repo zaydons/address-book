@@ -1,0 +1,24 @@
+BEGIN:VCARD
+VERSION:3.0
+PRODID:-//Apple Inc.//iPhone OS 18.0//EN
+N:Austen;Jane;;;
+FN:Jane Austen
+item1.TEL;type=CELL;type=VOICE;type=pref:+1 (212) 555-0102
+item2.TEL;type=HOME;type=VOICE:(718) 555-0103
+EMAIL;type=INTERNET;type=HOME;type=pref:jane@example.com
+item3.ADR;type=HOME;type=pref:;;Winchester Road\nChawton Cottage;Alton;Hampshire;GU34 1SD;United Kingdom
+BDAY;value=date:1975-12-16
+PHOTO;ENCODING=b;TYPE=JPEG:/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDA
+ xNDQ0Hyc5PTgyPC4zNDL==
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Plumber Bob
+TEL;type=WORK:555-0199
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:;;;;
+FN:
+EMAIL:noname@example.com
+END:VCARD

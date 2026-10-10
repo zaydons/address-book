@@ -1,4 +1,8 @@
 <?php
+	// An API call (with a token in the Authorization header or the "t" GET value) doesn't need a saved session
+	define('STATELESS_REQUEST', !empty($_GET['t']) || !empty($_SERVER['HTTP_AUTHORIZATION']) || !empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])
+		|| (function_exists('getallheaders') && !empty(array_change_key_case(getallheaders(), CASE_LOWER)['authorization'])));
+	
 	// Require relevent information for settings.config.inc.php, including functions and database access
 	require_once("../includes/settings.config.inc.php");
 	

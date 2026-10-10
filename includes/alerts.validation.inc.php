@@ -42,6 +42,10 @@
 				'csrf_token' => 'Your form submission has been blocked due to an failing a CSRF security check. Please refresh the page and try again.',
 			),
 			'format' => array(
+				'contact_number_home' => 'The home contact number can only contain digits, spaces and ( ) - . / characters, with an optional + at the start.',
+				'contact_number_mobile' => 'The mobile contact number can only contain digits, spaces and ( ) - . / characters, with an optional + at the start.',
+				'contact_email' => 'The email address is not valid.',
+				'date_of_birth' => 'The date of birth is not a valid date.',
 				'ip_address' => 'You have submitted an IP address which is in the wrong format. Please check the IP address is in the correct IPv4 (example: 192.168.16.2) or IPv6 (example: fe80:1aaf:8000:2819:aaa1:738d:abcd:1234) format.',
 			),
 		),

@@ -62,23 +62,33 @@ No files need to be copied to TrueNAS. The system is configured with environment
 
 #### Publishing the image (once)
 
-1. Push to the `main` branch, or run the **Docker image** workflow from the **Actions** tab on GitHub. On a fork, you may need to enable GitHub Actions in the **Actions** tab first.
+1. Push to the `main` branch, or run the **Test and publish** workflow from the **Actions** tab on GitHub. The image is only published if the tests pass. On a fork, you may need to enable GitHub Actions in the **Actions** tab first.
 2. On GitHub, open the `address-book` package (from **Packages** on your profile) and check under **Package settings** that the visibility is **Public**, so that TrueNAS can download it. If you keep it private, add your GitHub username and a personal access token with the `read:packages` scope as a registry login in TrueNAS instead.
 
 #### Installing the app
 
-1. In TrueNAS, go to **Apps**, then **Discover Apps**, open the menu (three dots) and choose **Install via YAML**.
-2. Give the app a name, such as `address-book`.
-3. Paste in the contents of [truenas/address-book.yaml](truenas/address-book.yaml), and before saving change:
+1. Create a dataset for the app's data, such as `SSDs/Applications/address-book` (**Datasets → Add Dataset**). It can be empty: the app sets its permissions when it starts.
+2. In TrueNAS, go to **Apps**, then **Discover Apps**, open the menu (three dots) and choose **Install via YAML**.
+3. Give the app a name, such as `address-book`.
+4. Paste in the contents of [truenas/address-book.yaml](truenas/address-book.yaml), and before saving change:
+   - the dataset path on the `volumes` line to the dataset you created (`/mnt/<pool>/...`),
    - `SITE_URL` to the address you will use, such as `http://192.168.1.10:8080/`,
-   - `TIMEZONE` if you don't want UTC.
-4. Save, then open `http://<your TrueNAS address>:8080/` and log in with the default credentials below. You will be asked to choose a new password.
+   - `TIMEZONE` to your timezone, such as `America/New_York` (see the [list of timezones](https://www.php.net/manual/en/timezones.php)).
+5. Save, then open the `SITE_URL` address and log in with the default credentials below. You will be asked to choose a new password.
 
-TrueNAS uses ports 80 and 443 for its own web interface, so the system uses port 8080. To use a different port, change the first number in `"8080:80"`, and in `SITE_URL`.
+The database (`address-book.sqlite`) and logged-in sessions are kept in the dataset, so they survive app updates and restarts, and are included in snapshots of the dataset.
 
-The database is kept in a Docker volume by default. To keep it in a dataset instead, so that it is included in your snapshots and backups, see the comment on the `volumes` line in the YAML file. The app gives itself permission to write to the dataset when it starts.
+TrueNAS uses ports 80 and 443 for its own web interface, so the system uses port 8080. To use a different port, change the first number in `"8080:80"`, and in `SITE_URL`. To see which ports are already in use, run `sudo ss -tlnp` in the TrueNAS shell.
 
-To update to a newer image, edit the app in TrueNAS and save it again, or use the app's option to pull the latest images. For more control over when updates happen, replace `latest` in the `image` line with a version tag, such as `1.1.0`, once a version has been tagged.
+#### Updating
+
+The image is published with these tags:
+
+- `latest` - the newest version. To update, edit the app in TrueNAS and save it again, or use the app's option to pull the latest images.
+- `1.2.0` - exactly that version.
+- `1.2` and `1` - the newest version starting with that number. For example, `ghcr.io/zaydons/address-book:1` gets fixes and new features, but not a future version 2 which might need changes to your set-up.
+
+To stay on a version until you choose to update, replace `latest` in the `image` line with a version tag. The [CHANGELOG](CHANGELOG.md) lists what each version changes.
 
 For HTTPS, put the system behind a reverse proxy (see [Running Behind a Reverse Proxy](#running-behind-a-reverse-proxy)) and set `SITE_URL` to the `https://` address.
 
@@ -95,13 +105,15 @@ You will be asked to choose a new password the first time you log in. Users adde
 
 ## Backups
 
-The database is a single file. To back it up while the system is running, use SQLite's backup command rather than copying the file, as a copy taken during a write may be incomplete. For example, in Docker or on TrueNAS (where the container is called `address-book-app-1`; see `docker ps` for the name):
+The database is a single file. To back it up while the system is running, use SQLite's backup command rather than copying the file, as a copy taken during a write may be incomplete. For example, on TrueNAS, where the container is called `address-book` (run `sudo docker ps` to see the names of your containers):
 
 ```bash
-docker exec -u www-data address-book-app-1 php -r '$db = new PDO("sqlite:/data/address-book.sqlite"); $db->exec("VACUUM INTO \"/data/backup.sqlite\"");'
+sudo docker exec -u www-data address-book php -r '$db = new PDO("sqlite:/data/address-book.sqlite"); $db->exec("VACUUM INTO \"/data/backup.sqlite\"");'
 ```
 
 This writes a complete copy to `backup.sqlite` in the same directory. If the database is in a TrueNAS dataset, snapshots of the dataset are also a good way to keep backups.
+
+Contacts can also be downloaded as a CSV or vCard file from the **Export** button on the Address Book page (see [Importing and Exporting Contacts](#importing-and-exporting-contacts)). This keeps the contacts, but not users, API tokens or logs.
 
 ## Upgrading
 
@@ -138,6 +150,28 @@ There are several configuration values which can be set in the `includes/setting
 - `LOGIN_MAX_FAILED_USERNAME` (optional, default `5`) is the number of failed logins allowed for one username within the lockout window. Further attempts for that username are blocked until the window has passed.
 - `LOGIN_MAX_FAILED_IP` (optional, default `20`) is the number of failed logins allowed from one IP address within the lockout window.
 - `LOGIN_LOCKOUT_MINUTES` (optional, default `15`) is the length of the lockout window in minutes.
+- `PHONE_FORMAT` (optional, default `us`) is how phone numbers are shown: `us`, `uk` or `none` (see [Phone Numbers](#phone-numbers)).
+- `SESSION_LIFETIME_DAYS` (optional, default `365`) is how long users stay logged in. Each visit starts the count again, so users who keep using the system stay logged in. Set it to `0` to log users out when they close their browser. Logged-in sessions are kept next to the database (in a `sessions` directory), so restarting or updating the system doesn't log users out.
+- `LOG_RETENTION_DAYS` (optional, default `90`) is how many days log entries are kept for. Older entries are removed automatically. Set it to `0` to keep them forever.
+
+## Importing and Exporting Contacts
+
+On the Address Book page:
+
+- **Export** downloads every contact as a **CSV** file, which opens in spreadsheet programs such as Excel, or a **vCard** (`.vcf`) file, which can be imported into phones and other address books.
+- **Import** adds contacts from a vCard file (exported from a phone, Google Contacts, iCloud, Outlook or another address book) or a CSV file. A CSV file needs a header row naming its columns. Use the same columns as an exported CSV file, although common alternatives such as "Given Name", "Surname", "Cell" and "Zip" are recognised too. Dates of birth are written as `YYYY-MM-DD`.
+
+Imported contacts are checked in the same way as contacts added by hand. Any which can't be added, such as one with an invalid email address, are listed with the reason so that they can be fixed. Contacts which are already in the address book (the same name, phone numbers and email address) are skipped, unless you choose otherwise.
+
+## Phone Numbers
+
+Phone numbers can be typed in any common format, such as `+1 (212) 555-1234`, `212.555.1234` or `07700 900123`. They are stored as digits, with a `+` at the start for an international number, and shown in the format set by `PHONE_FORMAT`:
+
+- `us` (the default) - `(212) 555-1234`, and `+1 (212) 555-1234` for numbers with the +1 country code.
+- `uk` - `01234 567890`.
+- `none` - as stored.
+
+Numbers which don't fit the format, such as international numbers, are shown as stored.
 
 ## Dark Theme
 
@@ -175,7 +209,7 @@ Screenshots of the system can be found in the [screenshots](screenshots/) direct
 The API built in the system is accessed using a HTTP GET request to the [api.php](html/api.php) page. The API token is sent in an `Authorization` header, and the request requires 2 values:
 
 - `m` for the API method.
-- `q` for the API query string - note that the query must contain no whitespace (including encoded whitespace characters).
+- `q` for the API query string.
 
 For example:
 
@@ -243,7 +277,7 @@ If an API token has no authorised IP address associated with it, then this means
 
 API methods are used in the `m` value in the HTTP GET request. The following methods are valid.
 
-- `findNumber` - Obtain the first contact found based on a queried phone number (mobile and home). Note that if more than one contact exists with the same phone number then this will only return the first result, based on the last name of the contacts in alphabetical order.
+- `findNumber` - Obtain the first contact found based on a queried phone number (mobile and home). The number can be in any format, such as `2125551234` or `+1 (212) 555-1234` (URL-encoded). Numbers of 10 or more digits also match on their last 10 digits, so a number is found with or without its country code (for example `+12125551234` finds a contact saved as `(212) 555-1234`). If more than one contact has the number, an exact match comes first, then the contacts in alphabetical order of last name.
   - Example: a query of `api.php?m=findNumber&q=0987654321` (with the token in the `Authorization` header) will return the result (if it exists) for the phone number `0987654321`.
 
 ## License
@@ -251,5 +285,19 @@ API methods are used in the `m` value in the HTTP GET request. The following met
 This project is licensed under the [MIT License](LICENSE.md).
 
 ## Contributions
+
+### Running the Tests
+
+The tests run against the system in a fresh Docker container. They cover logging in, security, contacts, phone numbers, the API, importing and exporting, logs, the database, and the pages in a browser (light and dark themes, and on a phone). They run automatically on every pull request and before each image is published.
+
+To run them yourself, you need Docker, Python 3 and Node.js:
+
+```bash
+pip install -r tests/requirements.txt
+(cd tests/ui && npm ci && npx playwright install --with-deps chromium)
+tests/run.sh
+```
+
+Set `MYSQL_IMAGE=mysql:9` to also test copying data from MySQL, or `SKIP_UI=1` to skip the browser tests.
 
 Pull requests (PRs) to this repository are welcome. If your PR is to address an open issue, please try to keep your changes specific to only that issue. Also please avoid addressing multiple issues within a single PR.

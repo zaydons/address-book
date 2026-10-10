@@ -22,3 +22,14 @@
 	 * See https://www.php.net/manual/en/timezones.php for a list of valid timezones.
 	 */
 	defined("TIMEZONE")			?	null	:	define("TIMEZONE", "UTC");
+
+	/**
+	 * Optional settings, shown with their default values. Remove the // at the start of a line to change one.
+	 * See "Local Settings Configuration Values" in the README for what each one does.
+	 */
+	// defined("PHONE_FORMAT")				?	null	:	define("PHONE_FORMAT", "us"); // "us", "uk" or "none"
+	// defined("SESSION_LIFETIME_DAYS")		?	null	:	define("SESSION_LIFETIME_DAYS", 365);
+	// defined("LOG_RETENTION_DAYS")		?	null	:	define("LOG_RETENTION_DAYS", 90);
+	// defined("LOGIN_MAX_FAILED_USERNAME")	?	null	:	define("LOGIN_MAX_FAILED_USERNAME", 5);
+	// defined("LOGIN_MAX_FAILED_IP")		?	null	:	define("LOGIN_MAX_FAILED_IP", 20);
+	// defined("LOGIN_LOCKOUT_MINUTES")		?	null	:	define("LOGIN_LOCKOUT_MINUTES", 15);
