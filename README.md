@@ -141,6 +141,20 @@ On the Address Book page:
 
 Imported contacts are checked in the same way as contacts added by hand. Any which can't be added, such as one with an invalid email address, are listed with the reason so that they can be fixed. Contacts which are already in the address book (the same name, phone numbers and email address) are skipped, unless you choose otherwise.
 
+### From an Excel spreadsheet
+
+[tools/import-spreadsheet.py](tools/import-spreadsheet.py) imports an Excel (`.xlsx`) spreadsheet, such as one exported from Numbers, with columns such as Name, Address, Address 2, City, State and Zip. A Name such as `Michael & Catherine Smith` is split into its first and last names using a Last Name column, so that it shows as it is written in the spreadsheet. It needs only Python 3:
+
+```bash
+# Convert it into a CSV file next to it, to check and then import from the Import page
+python3 tools/import-spreadsheet.py Address_Book.xlsx
+
+# Or import it straight away (it asks for the password)
+python3 tools/import-spreadsheet.py Address_Book.xlsx --url http://192.168.0.31:8080/ --username admin
+```
+
+Running it again skips the contacts which are already in the address book.
+
 ## Phone Numbers
 
 Phone numbers can be typed in any common format, such as `+1 (212) 555-1234`, `212.555.1234` or `07700 900123`. They are stored as digits, with a `+` at the start for an international number, and shown in the format set by `PHONE_FORMAT`:

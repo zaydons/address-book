@@ -1,5 +1,9 @@
 # Address Book Changelog
 
+## Unreleased
+
+- Added `tools/import-spreadsheet.py`, which imports contacts from an Excel (`.xlsx`) spreadsheet, such as one exported from Numbers.
+
 ## 1.3.0 (2026-10-10)
 
 - Icons are included in the pages instead of loading the Font Awesome icon font.
