@@ -1,0 +1,70 @@
+# Creates a version: a GitHub release and its tag (such as v1.2.0), with the notes for that version from CHANGELOG.md,
+# then publishes the image with the version's tags (1.2.0, 1.2 and 1) using the Test and publish workflow.
+#
+# Run it from the Actions tab: choose "Release", then "Run workflow", and enter the version number.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number, such as 1.2.0 (it must have a section in CHANGELOG.md)'
+        required: true
+      commit:
+        description: 'Branch or commit to release (main for the newest code)'
+        required: true
+        default: main
+      latest:
+        description: 'Mark it as the latest release (untick when releasing an older version)'
+        type: boolean
+        default: true
+
+permissions:
+  # Create the release and its tag
+  contents: write
+  # Start the Test and publish workflow for the new tag
+  actions: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The whole history, to find the commit to release
+          fetch-depth: 0
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+          COMMIT: ${{ inputs.commit }}
+          LATEST: ${{ inputs.latest }}
+        run: |
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::The version must be three numbers, such as 1.2.0"
+            exit 1
+          fi
+          TAG="v$VERSION"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "::error::$TAG already exists"
+            exit 1
+          fi
+          SHA=$(git rev-parse --verify "origin/$COMMIT^{commit}" 2>/dev/null || git rev-parse --verify "$COMMIT^{commit}")
+
+          # The notes are the version's section of CHANGELOG.md (from the newest code, so they include the release date)
+          awk -v heading="## $VERSION " 'index($0, heading) == 1 { found = 1; next } found && /^## / { exit } found { print }' CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "::error::CHANGELOG.md has no section for $VERSION"
+            exit 1
+          fi
+
+          gh release create "$TAG" --target "$SHA" --title "$TAG" --notes-file notes.md --latest="$LATEST"
+          echo "Created $TAG at $SHA"
+
+      - name: Publish the image for the new version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ inputs.version }}
+        # A tag created by a workflow doesn't start other workflows by itself, so start Test and publish for it
+        run: gh workflow run docker-publish.yml --ref "$TAG"
