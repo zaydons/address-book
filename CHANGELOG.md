@@ -1,6 +1,6 @@
 # Address Book Changelog
 
-## 1.3.0 (Unreleased)
+## 1.3.0 (2026-10-10)
 
 - Icons are included in the pages instead of loading the Font Awesome icon font.
 - Removed `tools/mysql-to-sqlite.php`, which copied data from the MySQL versions before 1.1.0. The image no longer includes MySQL support.
