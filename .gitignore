@@ -6,3 +6,4 @@ data/
 
 # Test tools
 tests/ui/node_modules/
+__pycache__/
