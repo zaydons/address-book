@@ -267,10 +267,12 @@ If an API token has no authorised IP address associated with it, then this means
 
 ### API Methods
 
-API methods are used in the `m` value in the HTTP GET request. The following methods are valid.
+API methods are used in the `m` value in the HTTP request. The following methods are valid.
 
 - `findNumber` - Obtain the first contact found based on a queried phone number (mobile and home). The number can be in any format, such as `2125551234` or `+1 (212) 555-1234` (URL-encoded). Numbers of 10 or more digits also match on their last 10 digits, so a number is found with or without its country code (for example `+12125551234` finds a contact saved as `(212) 555-1234`). If more than one contact has the number, an exact match comes first, then the contacts in alphabetical order of last name.
   - Example: a query of `api.php?m=findNumber&q=0987654321` (with the token in the `Authorization` header) will return the result (if it exists) for the phone number `0987654321`.
+- `addContact` - Add one or more contacts. This method needs a HTTP POST request, with `m` and `q` sent as form values. The query is a JSON object of contact fields, or a list of them. The fields are `first_name` (required), `middle_name`, `last_name`, `contact_number_home`, `contact_number_mobile`, `contact_email`, `date_of_birth` (`YYYY-MM-DD`), `address_line_1`, `address_line_2`, `address_town`, `address_county` and `address_post_code`. Contacts already in the address book (the same name, phone numbers and email address) are skipped, as on the Import page. The result is the number of contacts `added`, the number skipped as `duplicates`, and a list of `problems`. If any contact can't be added, such as one without a first name, the others are still added and the call returns HTTP 422 with `success` of `0`.
+  - Example: `curl -H "Authorization: Bearer APITOKEN" --data-urlencode "m=addContact" --data-urlencode 'q=[{"first_name": "William", "last_name": "Shakespeare", "address_post_code": "02140"}]' http://localhost/api.php`
 
 ## License
 
