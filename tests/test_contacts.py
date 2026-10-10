@@ -1,5 +1,6 @@
 """Adding, viewing, updating and deleting contacts, phone numbers and the API."""
 import html
+import json
 import re
 
 import requests
@@ -124,3 +125,37 @@ def test_api_tokens_errors_and_logging(admin):
     # Only the start of a token is recorded in the logs
     logs = " ".join(row[0] + " " + row[1] for row in sql("SELECT action, url FROM logs WHERE action LIKE '%Token%' OR url LIKE '%api.php%'"))
     assert key not in logs and key[:4] + "..." in logs
+
+
+def test_api_adds_contacts(admin):
+    key = api_token(admin)
+    headers = {"Authorization": "Bearer " + key}
+    first, second = unique("Api"), unique("Api")
+    contacts = [{"first_name": first, "last_name": "Added", "address_town": "Erie", "address_post_code": "02140"},
+                {"first_name": second, "last_name": "Added", "address_post_code": 16509}]
+    response = requests.post(url("api.php"), data={"m": "addContact", "q": json.dumps(contacts)}, headers=headers)
+    assert response.status_code == 200 and response.json()["result"] == {"added": 2, "duplicates": 0, "problems": []}
+    assert sql_value("SELECT address_post_code FROM contacts WHERE first_name = ?", first) == "02140"
+    assert sql_value("SELECT address_post_code FROM contacts WHERE first_name = ?", second) == "16509"
+    # Sending them again skips them, and a single contact can be sent on its own
+    response = requests.post(url("api.php"), data={"m": "addContact", "q": json.dumps(contacts[0])}, headers=headers)
+    assert response.status_code == 200 and response.json()["result"]["duplicates"] == 1
+    # Contacts which can't be added are listed, and the others are still added
+    third = unique("Api")
+    response = requests.post(url("api.php"), data={"m": "addContact", "q": json.dumps([{"last_name": "Nofirst"}, {"first_name": third}])}, headers=headers)
+    assert response.status_code == 422 and response.json()["success"] == 0
+    assert response.json()["result"]["added"] == 1 and "Contact 1" in response.json()["result"]["problems"][0]
+    assert sql_value("SELECT COUNT(*) FROM contacts WHERE first_name = ?", third) == 1
+
+
+def test_api_add_contact_needs_post_and_json(admin):
+    key = api_token(admin)
+    headers = {"Authorization": "Bearer " + key}
+    name = unique("Get")
+    response = requests.get(url("api.php"), params={"m": "addContact", "q": json.dumps({"first_name": name})}, headers=headers)
+    assert response.status_code == 400 and response.json()["result"] == "invalid_query"
+    assert sql_value("SELECT COUNT(*) FROM contacts WHERE first_name = ?", name) == 0
+    for query in ["not json", "[]", "[1, 2]"]:
+        response = requests.post(url("api.php"), data={"m": "addContact", "q": query}, headers=headers)
+        assert response.status_code == 400 and response.json()["result"] == "invalid_query", query
+    assert requests.post(url("api.php"), data={"m": "addContact", "q": "{}"}, headers={"Authorization": "Bearer WRONGTOKEN12"}).status_code == 401

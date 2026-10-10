@@ -14,8 +14,10 @@
 	if($api_token) {
 		// User is making an API call
 		// Only accept text values for the method and query, as anything else (such as an array) isn't a valid API call
-		$api_method = isset($_GET['m']) && is_string($_GET['m']) ? $_GET['m'] : null;
-		$api_query = isset($_GET['q']) && is_string($_GET['q']) ? $_GET['q'] : null;
+		// The method and query can also be sent in a POST request, as the addContact method needs
+		$api_values = array_merge($_GET, $_POST);
+		$api_method = isset($api_values['m']) && is_string($api_values['m']) ? $api_values['m'] : null;
+		$api_query = isset($api_values['q']) && is_string($api_values['q']) ? $api_values['q'] : null;
 		$api = new API($api_token, $api_method, $api_query);
 
 		// Output the array_result in JSON format

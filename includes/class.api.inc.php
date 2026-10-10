@@ -8,6 +8,8 @@
 					'invalid_token' => 'An invalid API token was sent. This means that the token does not exist or you are making an API call from an unauthorised IP address.',
 					'invalid_method' => 'An invalid API method was requested. Please follow the documentation and check your requested method exists, this includes correct spelling and upper/lower case characters.',
 					'no_result' => 'A result could not be found.',
+					'invalid_query' => 'The query could not be read. The addContact method needs a POST request with a JSON object of contact fields, or a list of them, as the query.',
+					'not_added' => 'Some contacts could not be added. The result lists how many were added and the reason for each one which was not.',
 					'success' => 'API call successful.'
 				);
 		
@@ -18,10 +20,15 @@
 				$result = null, // The result of the API call, if any
 				$result_message = null, // The result of the API call, if any
 				$available_methods = array( // The different types of methods available, with their descriptions
-					'findNumber' => 'Obtain the first contact found based on a queried phone number. Note that if more than one contact has the same phone number this will only return the first, based on last name in alphabetical order. Example, ' . PAGELINK_API . '?m=findNumber&q=0987654321 will return the result (if it exists) for the phone number 0987654321.'
+					'findNumber' => 'Obtain the first contact found based on a queried phone number. Note that if more than one contact has the same phone number this will only return the first, based on last name in alphabetical order. Example, ' . PAGELINK_API . '?m=findNumber&q=0987654321 will return the result (if it exists) for the phone number 0987654321.',
+					'addContact' => 'Add contacts, sent in a POST request. The query is a JSON object of contact fields (first_name, middle_name, last_name, contact_number_home, contact_number_mobile, contact_email, date_of_birth, address_line_1, address_line_2, address_town, address_county, address_post_code), or a list of them. Contacts already in the address book are skipped. The result is the number added and skipped, and any problems.'
 				),
 				$array_result = null, // Used to build a JSON format to return a result
 				$http_response = 200; // The HTTP status code returned to the client
+		
+		// Set by a method when it fails for a reason other than finding no result
+		private	$failure = null, // The index of the reason in $result_messages
+				$failure_result = null; // A result to return with the failure, if any
 		
 		// Properties relating to when an API token is looked up
 		public	$found = false, // When an API token is found
@@ -61,15 +68,16 @@
 							$this->http_response = 200;
 							
 							// Create new Log instance, and log the action to the database
-							$log = new Log('api_call_success', 'Token (' . self::mask_token($token) . ') called Method (' . $method . ') with Query (' . $query . ')');
+							$log = new Log('api_call_success', 'Token (' . self::mask_token($token) . ') called Method (' . $method . ') with Query (' . self::log_query($query) . ')');
 						} else {
-							// No result could be found
-							$this->result = 'no_result';
-							$this->result_message = $this->result_messages[$this->result];
-							$this->http_response = 404;
+							// No result could be found, or the method failed for another reason
+							$failure = $this->failure ?? 'no_result';
+							$this->result = $this->failure_result ?? $failure;
+							$this->result_message = $this->result_messages[$failure];
+							$this->http_response = array('no_result' => 404, 'invalid_query' => 400, 'not_added' => 422)[$failure];
 							
 							// Create new Log instance, and log the action to the database
-							$log = new Log('api_call_failed', 'Token (' . self::mask_token($token) . ') called Method (' . $method . ') with Query (' . $query . ') - No Result');
+							$log = new Log('api_call_failed', 'Token (' . self::mask_token($token) . ') called Method (' . $method . ') with Query (' . self::log_query($query) . ') - ' . ucwords(str_replace('_', ' ', $failure)));
 						}
 					} else {
 						// $method is not valid
@@ -78,7 +86,7 @@
 						$this->http_response = 400;
 						
 						// Create new Log instance, and log the action to the database
-						$log = new Log('api_call_failed', 'Token (' . self::mask_token($token) . ') called Method (' . $method . ') with Query (' . $query . ') - Invalid Method');
+						$log = new Log('api_call_failed', 'Token (' . self::mask_token($token) . ') called Method (' . $method . ') with Query (' . self::log_query($query) . ') - Invalid Method');
 					}
 				} else {
 					// $token is not valid
@@ -87,7 +95,7 @@
 					$this->http_response = 401;
 					
 					// Create new Log instance, and log the action to the database
-					$log = new Log('api_call_failed', 'Token (' . self::mask_token($token) . ') called Method (' . $method . ') with Query (' . $query . ') - Invalid Token');
+					$log = new Log('api_call_failed', 'Token (' . self::mask_token($token) . ') called Method (' . $method . ') with Query (' . self::log_query($query) . ') - Invalid Token');
 				}
 			} else {
 				// Not set, return incomplete API call
@@ -137,6 +145,11 @@
 		// Method to shorten a token so that it can be identified in the logs without the full token being recorded
 		public static function mask_token($token) {
 			return substr($token, 0, 4) . '...';
+		}
+		
+		// Method to shorten a query for the logs, as an addContact query can hold many contacts
+		private static function log_query($query) {
+			return mb_strlen($query) > 200 ? mb_substr($query, 0, 200) . '...' : $query;
 		}
 		
 		// Method to check if a token is valid or not
@@ -201,11 +214,48 @@
 						$contact = new Contact();
 						return $contact->find_number($query);
 						break;
+					case 'addContact' :
+						// Method to add one or more contacts
+						return $this->add_contacts($query);
+						break;
 				}
 			} else {
 				// $method and $query not sent
 				return false;
 			}
+		}
+		
+		// Method to add the contacts in a JSON query, skipping any already in the address book
+		private function add_contacts($query) {
+			// Only accept a POST request, so that contacts aren't added by following a link or recorded in web server logs
+			$contacts = ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' ? json_decode($query, true) : null;
+			// A single contact can be sent on its own instead of in a list
+			if(is_array($contacts) && !array_is_list($contacts)) {
+				$contacts = array($contacts);
+			}
+			if(!is_array($contacts) || empty($contacts)) {
+				$this->failure = 'invalid_query';
+				return false;
+			}
+			
+			$items = array();
+			foreach($contacts as $number => $fields) {
+				if(!is_array($fields)) {
+					$this->failure = 'invalid_query';
+					return false;
+				}
+				// Accept numbers as text, such as a zip code sent as 16509
+				$fields = array_map(function($value) { return is_int($value) || is_float($value) ? (string) $value : $value; }, $fields);
+				$items[] = array('line' => 'Contact ' . ($number + 1), 'fields' => $fields);
+			}
+			
+			$result = ContactTransfer::import($items);
+			if(!empty($result['problems'])) {
+				$this->failure = 'not_added';
+				$this->failure_result = $result;
+				return false;
+			}
+			return $result;
 		}
 		
 		// Method to find all api tokens in the database
