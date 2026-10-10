@@ -427,7 +427,7 @@
 		}
 
 		// The contact's address on one line, leaving out any parts which are empty
-		private function full_address(array $contact) {
+		public function full_address(array $contact) {
 			return implode(', ', array_filter(array($contact['address_line_1'], $contact['address_line_2'], $contact['address_town'], $contact['address_county'], $contact['address_post_code']), function($part) { return $part !== null && $part !== ''; }));
 		}
 

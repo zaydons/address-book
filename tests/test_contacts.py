@@ -34,9 +34,8 @@ def test_phone_numbers_can_be_typed_in_any_format_and_are_shown_in_us_format(adm
     response = add_contact(admin, first_name=name, contact_number_mobile="+1 (212) 555-1234", contact_number_home="718.555.0000")
     assert "successfully added" in response.text
     assert sql("SELECT contact_number_mobile, contact_number_home FROM contacts WHERE first_name = ?", name)[0] == ["+12125551234", "7185550000"]
-    assert "+1 (212) 555-1234" in response.text
     view = admin.get(url("view-contact.php?i=" + contact_id(name))).text
-    assert "(718) 555-0000" in view and 'href="tel:+12125551234"' in view
+    assert "+1 (212) 555-1234" in view and "(718) 555-0000" in view and 'href="tel:+12125551234"' in view
 
 
 def test_invalid_values_are_rejected(admin):
@@ -159,3 +158,12 @@ def test_api_add_contact_needs_post_and_json(admin):
         response = requests.post(url("api.php"), data={"m": "addContact", "q": query}, headers=headers)
         assert response.status_code == 400 and response.json()["result"] == "invalid_query", query
     assert requests.post(url("api.php"), data={"m": "addContact", "q": "{}"}, headers={"Authorization": "Bearer WRONGTOKEN12"}).status_code == 401
+
+
+def test_address_book_page_shows_names_and_full_addresses(admin):
+    name = unique("Listed")
+    add_contact(admin, first_name=name, last_name="Person", contact_number_mobile="2125550199", contact_email="listed@example.com",
+                address_line_1="90 South Pearl St", address_line_2="#2SE", address_town="North East", address_county="PA", address_post_code="16426")
+    page = admin.get(url("index.php")).text
+    assert name + " Person" in page and "90 South Pearl St, #2SE, North East, PA, 16426" in page
+    assert "listed@example.com" not in page and "555-0199" not in page and no_php_errors(page)
