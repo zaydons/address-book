@@ -4,7 +4,8 @@
 # Image tags:
 #   latest              the newest version: every push to main, and every version tag
 #   1.2.3, 1.2 and 1    from a version tag, such as v1.2.3 - use one of these to stay on a version until you choose to update
-#   sha-abc1234         every build, by commit
+#
+# Older builds which are no longer tagged are deleted by the Clean up images workflow.
 #
 # Pull requests run the tests and build the image to check that it works, but don't publish it.
 name: Test and publish
@@ -45,9 +46,6 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Run the tests
-        env:
-          # Also test copying data from MySQL with tools/mysql-to-sqlite.php
-          MYSQL_IMAGE: mysql:9
         run: tests/run.sh
 
   publish:
@@ -80,7 +78,6 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=sha
             type=ref,event=branch,enable=${{ github.event_name == 'workflow_dispatch' }}
 
       - name: Build and publish

@@ -61,9 +61,9 @@
 				</tbody>
 			</table>
 			<a href="<?php echo PAGELINK_CONTACTSADD; ?>" type="button" class="btn btn-primary">Add Contact</a>
-			<a href="<?php echo PAGELINK_CONTACTSIMPORT; ?>" class="btn btn-outline-secondary"><i class="fa fa-upload" aria-hidden="true"></i> Import</a>
+			<a href="<?php echo PAGELINK_CONTACTSIMPORT; ?>" class="btn btn-outline-secondary"><?php echo icon('import'); ?> Import</a>
 			<div class="btn-group">
-				<button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-download" aria-hidden="true"></i> Export</button>
+				<button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><?php echo icon('export'); ?> Export</button>
 				<ul class="dropdown-menu">
 					<li><a class="dropdown-item" href="<?php echo PAGELINK_CONTACTSEXPORT; ?>?format=csv">CSV (for spreadsheets)</a></li>
 					<li><a class="dropdown-item" href="<?php echo PAGELINK_CONTACTSEXPORT; ?>?format=vcf">vCard (for phones and other address books)</a></li>

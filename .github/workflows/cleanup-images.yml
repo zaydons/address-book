@@ -1,0 +1,37 @@
+# Deletes images which are no longer needed from the GitHub Container Registry, so that they don't build up:
+#   - untagged images, such as earlier builds of "latest" which a newer build has replaced
+#   - sha-... tags, which earlier versions of the Test and publish workflow added to every build
+# Version tags (such as 1.2.0, 1.2 and 1) and latest are always kept.
+#
+# It runs every week. To run it now, or to see what it would delete without deleting anything, use "Run workflow" in the Actions tab.
+name: Clean up images
+
+on:
+  schedule:
+    - cron: '17 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Only list what would be deleted'
+        type: boolean
+        default: false
+
+permissions:
+  packages: write
+
+# Don't run at the same time as another clean up
+concurrency:
+  group: cleanup-images
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          package: address-book
+          use-regex: true
+          delete-tags: '^sha-'
+          exclude-tags: '^(latest|\d+(\.\d+){0,2})$'
+          delete-untagged: true
+          dry-run: ${{ inputs.dry-run || false }}

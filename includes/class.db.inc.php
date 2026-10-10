@@ -45,7 +45,7 @@
 			return self::$instance;
 		}
 
-		// Create the tables from sql/sql.sql if the database is new
+		// Create the tables from sql/schema.sql if the database is new
 		private static function create_tables($db) {
 			// The users table is checked for, as every database which has been set up will have one
 			$exists = $db->query("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'users'")->fetchColumn();
@@ -53,8 +53,8 @@
 				// Set up the database in a single transaction, so that two requests at the same time can't both set it up
 				$db->exec('BEGIN IMMEDIATE');
 				try {
-					$db->exec(file_get_contents(__DIR__ . '/../sql/sql.sql'));
-					// sql/sql.sql is always the latest structure, so a new database needs no upgrades
+					$db->exec(file_get_contents(__DIR__ . '/../sql/schema.sql'));
+					// sql/schema.sql is always the latest structure, so a new database needs no upgrades
 					$db->exec('PRAGMA user_version = ' . self::SCHEMA_VERSION);
 					$db->exec('COMMIT');
 				} catch(PDOException $error) {

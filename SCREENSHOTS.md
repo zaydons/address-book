@@ -1,49 +1,84 @@
-# Contacts System
+# Screenshots
 
-## Contacts table
-![Table of contacts](screenshots/contacts-table.png?raw=true "Contacts presented in HTML table")
+These show the system with example contacts. Run `tests/screenshots.sh` to take them again after changing how the pages look.
 
-## View contact
-![View contact details](screenshots/contacts-view.png?raw=true "Contact details presented in a HTML page")
+## Address Book
 
-## Add contact
-![Add contact form](screenshots/contacts-add.png?raw=true "HTML form for adding a contact")
+### Contacts
+![Table of contacts](screenshots/contacts-table.png)
 
-## Delete contact
-![Delete contact form](screenshots/contacts-delete.png?raw=true "HTML form for deleting a contact")
+### View contact
+![A contact's details](screenshots/contacts-view.png)
 
-## Update contact
-![Update contact form](screenshots/contacts-update.png?raw=true "HTML form for updating a contact")
+### Add contact
+![Form for adding a contact](screenshots/contacts-add.png)
 
-# Users
+### Update contact
+![Form for updating a contact](screenshots/contacts-update.png)
 
-## Users table
-![Table of users](screenshots/users-table.png?raw=true "Users presented in HTML table")
+### Delete contact
+![Asking to confirm deleting a contact](screenshots/contacts-delete.png)
 
-## Add user
-![Add user form](screenshots/users-add.png?raw=true "HTML form for adding a user")
+### Import contacts
+![Importing contacts from a CSV file](screenshots/contacts-import.png)
 
-## Delete user
-![Delete user form](screenshots/users-delete.png?raw=true "HTML form for deleting a user")
+## Users
 
-## Update user
-![Update user form](screenshots/users-update.png?raw=true "HTML form for updating a user")
+### Users
+![Table of users](screenshots/users-table.png)
 
-# Logs
+### Add user
+![Form for adding a user](screenshots/users-add.png)
 
-## Logs table
-![Table of logs](screenshots/logs-table.png?raw=true "Logs presented in HTML table")
+### Update user
+![Form for updating a user](screenshots/users-update.png)
 
-# API
+### Delete user
+![Asking to confirm deleting a user](screenshots/users-delete.png)
 
-## API table
-![Table of API tokens](screenshots/api-table.png?raw=true "API tokens presented in HTML table")
+## Logs
+![Table of log entries](screenshots/logs-table.png)
 
-## Delete API token
-![Delete API token form](screenshots/api-delete.png?raw=true "HTML form for deleting API token")
+## API
 
-## Update API token
-![Update API token form](screenshots/api-update.png?raw=true "HTML form for updating API token")
+### API tokens
+![Table of API tokens](screenshots/api-table.png)
 
-## JSON results of successful API call
-![Successful API call](screenshots/api-call-success.png?raw=true "JSON results of successful API call")
+### Add API token
+![Form for adding an API token](screenshots/api-add.png)
+
+### Update API token
+![Form for updating an API token](screenshots/api-update.png)
+
+### Delete API token
+![Asking to confirm deleting an API token](screenshots/api-delete.png)
+
+## Logging in
+
+### Log in
+![Login page](screenshots/login.png)
+
+### Choosing a new password
+![The default admin user is asked to choose a new password the first time it logs in](screenshots/change-password.png)
+
+## Dark mode
+
+The system follows the device's light or dark setting. The button in the menu bar switches between Auto, Dark and Light.
+
+### Contacts
+![Table of contacts in dark mode](screenshots/contacts-table-dark.png)
+
+### View contact
+![A contact's details in dark mode](screenshots/contacts-view-dark.png)
+
+### Update contact
+![Form for updating a contact in dark mode](screenshots/contacts-update-dark.png)
+
+### Logs
+![Table of log entries in dark mode](screenshots/logs-table-dark.png)
+
+## Phones
+
+On a phone, the menu opens from the button at the top.
+
+<img src="screenshots/phone-menu.png" alt="The menu open on a phone" width="300"> <img src="screenshots/phone-menu-dark.png" alt="The menu open on a phone in dark mode" width="300">
