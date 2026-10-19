@@ -30,8 +30,8 @@ jobs:
       - uses: dataaxiom/ghcr-cleanup-action@v1
         with:
           package: address-book
-          use-regex: true
-          delete-tags: '^sha-'
-          exclude-tags: '^(latest|\d+(\.\d+){0,2})$'
+          # Removes the sha- tags. An image which also has a version tag or latest only loses its sha- tag and is kept
+          delete-tags: 'sha-*'
+          # Images with any tag are never deleted by this, so version tags and latest are always kept
           delete-untagged: true
           dry-run: ${{ inputs.dry-run || false }}
